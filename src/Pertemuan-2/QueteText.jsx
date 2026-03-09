@@ -1,4 +1,4 @@
-function QuoteText() {
+export function QuoteText() {
     const text = "Mulutmu Harimaumu";
     const text2 = "Aku ingin jadi macan";
     return (
