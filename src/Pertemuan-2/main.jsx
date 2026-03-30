@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import HelloWorld from "./HelloWorld";
-import QuoteText from "./HelloWorld";
+import QuoteText from "./QueteText";
 import Container from "./Container";
 import './custom.css';
 
