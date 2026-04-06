@@ -4,11 +4,27 @@ import frameworkData from "./framework.json";
 export default function FrameworkList() {
 
     /** Deklarasi state **/
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedTag, setSelectedTag] = useState("");
+    // const [searchTerm, setSearchTerm] = useState("");
+    // const [selectedTag, setSelectedTag] = useState("");
+
+    /*Inisialisasi DataForm*/
+    const [dataForm, setDataForm] = useState({
+        searchTerm: "",
+        selectedTag: "",
+        /*Tambah state lain beserta default value*/
+    });
+
+    /*Inisialisasi Handle perubahan nilai input form*/
+    const handleChange = (evt) => {
+        const { name, value } = evt.target;
+        setDataForm({
+            ...dataForm,
+            [name]: value,
+        });
+    };
 
     /** Deklarasi Logic Search & Filter **/
-    const _searchTerm = searchTerm.toLowerCase();
+    const _searchTerm = dataForm.searchTerm.toLowerCase();
 
     const filteredFrameworks = frameworkData.filter((framework) => {
         const matchesSearch =
@@ -16,9 +32,8 @@ export default function FrameworkList() {
             framework.description.toLowerCase().includes(_searchTerm) ||
             framework.details.developer.toLowerCase().includes(_searchTerm);
 
-
-        const matchesTag = selectedTag
-            ? framework.tags.includes(selectedTag)
+        const matchesTag = dataForm.selectedTag
+            ? framework.tags.includes(dataForm.selectedTag)
             : true;
 
         return matchesSearch && matchesTag;
@@ -36,15 +51,15 @@ export default function FrameworkList() {
                 type="text"
                 name="searchTerm"
                 placeholder="Search framework..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={dataForm.searchTerm}
+                onChange={handleChange}
                 className="w-full p-2 border border-gray-300 rounded mb-4"
             />
 
             <select
                 name="selectedTag"
-                value={selectedTag}
-                onChange={(e) => setSelectedTag(e.target.value)}
+                value={dataForm.selectedTag}
+                onChange={handleChange}
                 className="w-full p-2 border border-gray-300 rounded mb-4"
             >
                 <option value="">All Tags</option>
