@@ -1,22 +1,17 @@
-import { useState, useMemo } from "react";
-import { Routes, Route } from "react-router-dom";
-import "./App.css";
+import { useMemo, useState } from "react";
+import { createRoot } from "react-dom/client";
+import "./assets/tailwind.css";
 import Sidebar from "./layout/Sidebar";
 import Header from "./layout/Header";
 import PageHeader from "./components/PageHeader";
 import Dashboard from "./pages/Dashboard";
-import Orders from "./pages/Orders";
-import Customers from "./pages/Customers";
-import NotFound from "./pages/NotFound";
 
-// Data awal untuk menu sidebar
 const initialMenuItems = [
     { id: "dashboard", label: "Dashboard", removable: false },
     { id: "orders", label: "Orders", removable: false },
     { id: "customers", label: "Customers", removable: false },
 ];
 
-// Data awal untuk orders (pesanan)
 const orderRows = [
     { id: "001", customer: "Anugrah", item: "Ayam", total: "Rp.78.000", status: "Preparing" },
     { id: "002", customer: "Putra", item: "Kebab", total: "Rp.92.000", status: "On Delivery" },
@@ -25,7 +20,6 @@ const orderRows = [
     { id: "005", customer: "Toyy", item: "Pizza", total: "Rp.88.000", status: "Preparing" },
 ];
 
-// Data awal untuk customers (pelanggan)
 const customerRows = [
     { id: "001", name: "Anugrah", email: "Anugrah@email.com", totalOrder: 14, city: "Bandung", tier: "Gold" },
     { id: "002", name: "Putra", email: "Putra@email.com", totalOrder: 9, city: "Jakarta", tier: "Silver" },
@@ -34,31 +28,18 @@ const customerRows = [
     { id: "005", name: "Toyy", email: "Toyy@email.com", totalOrder: 12, city: "Semarang", tier: "Gold" },
 ];
 
-/**
- * parseRupiah - Mengubah teks rupiah seperti Rp.78.000 menjadi angka
- * @param {string|number} value - Nilai dalam format rupiah atau angka
- * @returns {number} Nilai dalam bentuk angka untuk keperluan kalkulasi
- */
+// Mengubah teks rupiah seperti Rp.78.000 menjadi angka agar bisa dijumlahkan.
 function parseRupiah(value) {
     const onlyDigits = String(value).replace(/[^0-9]/g, "");
     return Number(onlyDigits || 0);
 }
 
-/**
- * formatRupiah - Memformat angka menjadi tampilan rupiah sederhana
- * @param {number} value - Nilai dalam bentuk angka
- * @returns {string} Nilai terformat dalam bentuk Rp.XX.XXX
- */
+// Memformat angka menjadi tampilan rupiah sederhana.
 function formatRupiah(value) {
     return `Rp.${new Intl.NumberFormat("id-ID").format(value)}`;
 }
 
-/**
- * getNextId - Menghasilkan ID 3 digit berikutnya dari daftar item
- * Contoh: jika ID terakhir adalah 005, maka akan menghasilkan 006
- * @param {Array} items - Daftar item yang memiliki properti id
- * @returns {string} ID 3 digit dengan padding nol di depan
- */
+// Menghasilkan ID 3 digit berikutnya, contoh: 006.
 function getNextId(items) {
     const maxId = items.reduce((maxValue, item) => {
         const numeric = Number(String(item.id).replace(/[^0-9]/g, ""));
@@ -68,32 +49,20 @@ function getNextId(items) {
     return String(maxId + 1).padStart(3, "0");
 }
 
-/**
- * App Component - Komponen utama aplikasi dengan routing
- * 
- * Fitur-fitur:
- * - Menampilkan sidebar dengan menu navigasi
- * - Routing menggunakan React Router (Dashboard, Orders, Customers)
- * - Search bar untuk filtering data
- * - State management untuk data orders, customers, dan menu
- */
+// App utama menyimpan state bersama untuk sidebar, search, dan konten dashboard.
 export default function App() {
-    // State untuk menu yang sedang aktif (untuk styling di sidebar)
+    // Menyimpan menu yang aktif supaya sidebar dan header bisa berubah saat diklik.
     const [activeSection, setActiveSection] = useState("dashboard");
-    // State untuk menyimpan nilai input search
+    // Menyimpan isi search agar daftar kartu dan menu bisa difilter.
     const [searchQuery, setSearchQuery] = useState("");
-    // State untuk menyimpan daftar menu di sidebar
+    // Menyimpan daftar menu agar tombol Add Menu benar-benar menambah item baru.
     const [menuItems, setMenuItems] = useState(initialMenuItems);
-    // State untuk menyimpan data orders
+    // Menyimpan data orders agar bisa ditambah dari fitur Orders.
     const [ordersData, setOrdersData] = useState(orderRows);
-    // State untuk menyimpan data customers
+    // Menyimpan data customers agar bisa ditambah dari fitur Customers.
     const [customersData, setCustomersData] = useState(customerRows);
 
-    /**
-     * dashboardCards - Menghitung statistik dashboard dari data orders
-     * Statistik yang dihitung: Total Orders, Total Delivered, Total Canceled, Total Revenue
-     * Menggunakan useMemo agar hanya dihitung ulang saat ordersData berubah
-     */
+    // Statistik dashboard dihitung langsung dari data orders agar selalu sinkron.
     const dashboardCards = useMemo(() => {
         const totalOrders = ordersData.length;
         const totalDelivered = ordersData.filter((item) => item.status === "Delivered").length;
@@ -111,21 +80,17 @@ export default function App() {
         ];
     }, [ordersData]);
 
-    /**
-     * filteredMenuItems - Menu yang sudah difilter berdasarkan search
-     * Saat ini mengembalikan semua menu (tidak difilter)
-     */
+    // Menyaring menu berdasarkan kata yang diketik di search bar.
     const filteredMenuItems = useMemo(() => {
+        // Search hanya untuk konten halaman aktif, jadi menu sidebar selalu tampil utuh.
         return menuItems;
     }, [menuItems]);
 
-    /**
-     * filteredDashboardCards - Kartu dashboard yang difilter berdasarkan search query
-     * Search hanya aktif saat di halaman Dashboard
-     */
+    // Menyaring kartu dashboard berdasarkan kata kunci search.
     const filteredDashboardCards = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
 
+        // Search dashboard aktif hanya saat section Dashboard dibuka.
         if (activeSection !== "dashboard" || !query) {
             return dashboardCards;
         }
@@ -135,13 +100,11 @@ export default function App() {
         );
     }, [activeSection, dashboardCards, searchQuery]);
 
-    /**
-     * filteredOrders - Data orders yang difilter berdasarkan search query
-     * Search hanya aktif saat di halaman Orders
-     */
+    // Menyaring data pesanan untuk halaman Orders.
     const filteredOrders = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
 
+        // Search orders aktif hanya saat section Orders dibuka.
         if (activeSection !== "orders" || !query) {
             return ordersData;
         }
@@ -154,13 +117,11 @@ export default function App() {
         );
     }, [activeSection, ordersData, searchQuery]);
 
-    /**
-     * filteredCustomers - Data customers yang difilter berdasarkan search query
-     * Search hanya aktif saat di halaman Customers
-     */
+    // Menyaring data pelanggan untuk halaman Customers.
     const filteredCustomers = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
 
+        // Search customers aktif hanya saat section Customers dibuka.
         if (activeSection !== "customers" || !query) {
             return customersData;
         }
@@ -173,26 +134,17 @@ export default function App() {
         );
     }, [activeSection, customersData, searchQuery]);
 
-    /**
-     * handleSectionChange - Mengubah menu yang sedang aktif
-     * Dipanggil saat user mengklik menu di sidebar
-     */
+    // Mengubah menu aktif ketika user mengklik item sidebar.
     function handleSectionChange(sectionId) {
         setActiveSection(sectionId);
     }
 
-    /**
-     * handleSearchChange - Menangani perubahan input search
-     * Dipanggil saat user mengetik di search bar
-     */
+    // Menangani input search pada header.
     function handleSearchChange(event) {
         setSearchQuery(event.target.value);
     }
 
-    /**
-     * handleAddMenu - Menambahkan menu baru ke sidebar
-     * Menu baru bernama "Menu N" dan dapat dihapus (removable: true)
-     */
+    // Menambahkan menu baru ke sidebar saat tombol Add Menu ditekan.
     function handleAddMenu() {
         const newNumber = menuItems.filter((item) => item.id.startsWith("menu-")).length + 1;
 
@@ -206,10 +158,7 @@ export default function App() {
         ]);
     }
 
-    /**
-     * handleAddOrder - Menambahkan order baru dari form Orders
-     * Juga sinkronisasi dengan data customers
-     */
+    // Menambahkan order baru dari form Orders.
     function handleAddOrder(orderPayload) {
         const newOrderId = getNextId(ordersData);
         const normalizedTotal = formatRupiah(parseRupiah(orderPayload.total));
@@ -225,7 +174,7 @@ export default function App() {
             ...currentOrders,
         ]);
 
-        // Sinkronkan customer: jika sudah ada, totalOrder naik; jika belum, buat baru
+        // Sinkronkan customer: jika sudah ada, totalOrder naik; jika belum, buat baru.
         setCustomersData((currentCustomers) => {
             const targetName = orderPayload.customer.trim().toLowerCase();
             const existingCustomer = currentCustomers.find(
@@ -254,9 +203,7 @@ export default function App() {
         });
     }
 
-    /**
-     * handleAddCustomer - Menambahkan customer baru dari form Customers
-     */
+    // Menambahkan customer baru dari form Customers.
     function handleAddCustomer(customerPayload) {
         const newCustomerId = getNextId(customersData);
 
@@ -273,16 +220,12 @@ export default function App() {
         ]);
     }
 
-    /**
-     * handleRemoveMenu - Menghapus menu dari sidebar
-     * Hanya menu dengan removable=true yang boleh dihapus
-     * Jika menu yang dihapus adalah yang aktif, fokus berpindah ke menu lain
-     */
+    // Menghapus menu dari sidebar dan memindahkan fokus ke menu berikutnya bila perlu.
     function handleRemoveMenu(menuId) {
         setMenuItems((currentItems) => {
             const targetItem = currentItems.find((item) => item.id === menuId);
 
-            // Hanya menu dengan removable=true yang boleh dihapus
+            // Hanya menu dengan removable=true yang boleh dihapus.
             if (!targetItem?.removable) {
                 return currentItems;
             }
@@ -298,9 +241,7 @@ export default function App() {
         });
     }
 
-    /**
-     * pageTitle - Menentukan judul halaman sesuai route yang aktif
-     */
+    // Menentukan judul halaman sesuai menu yang sedang aktif.
     const pageTitle =
         activeSection === "orders"
             ? "Orders"
@@ -308,9 +249,7 @@ export default function App() {
               ? "Customers"
               : "Dashboard";
 
-    /**
-     * pageBreadcrumb - Menentukan breadcrumb sesuai route yang aktif
-     */
+    // Menentukan breadcrumb sederhana agar header mengikuti menu yang dipilih.
     const pageBreadcrumb =
         activeSection === "orders"
             ? "Home / Orders / Order List"
@@ -318,7 +257,7 @@ export default function App() {
               ? "Home / Customers / Customer List"
               : "Home / Home Detail / Home Very Detail";
 
-    // Mengecek apakah data kosong untuk menampilkan pesan empty state
+    // Kalau search tidak menemukan hasil, dashboard akan menampilkan pesan kosong.
     const isDashboardEmpty = filteredDashboardCards.length === 0;
     const isOrdersEmpty = filteredOrders.length === 0;
     const isCustomersEmpty = filteredCustomers.length === 0;
@@ -326,7 +265,6 @@ export default function App() {
     return (
         <div className="min-h-screen bg-latar font-poppins text-teks">
             <div className="flex min-h-screen flex-col lg:flex-row">
-                {/* Sidebar Navigation */}
                 <Sidebar
                     activeSection={activeSection}
                     menuItems={filteredMenuItems}
@@ -334,8 +272,6 @@ export default function App() {
                     onAddMenu={handleAddMenu}
                     onRemoveMenu={handleRemoveMenu}
                 />
-
-                {/* Main Content Area dengan Routes */}
                 <main className="flex-1 p-4 md:p-6 xl:p-8">
                     <Header
                         searchValue={searchQuery}
@@ -347,63 +283,23 @@ export default function App() {
                             subtitle={pageBreadcrumb}
                             actionLabel="Add Button"
                         />
-
-                        {/* 
-                            Routes Component - Menampilkan komponen sesuai dengan URL path
-                            Setiap <Route> mendefinisikan path dan element yang akan ditampilkan
-                            path="/" untuk Dashboard, path="/orders" untuk Orders, dll.
-                        */}
-                        <Routes>
-                            {/* Route untuk halaman Dashboard (path: /) */}
-                            <Route
-                                path="/"
-                                element={
-                                    <Dashboard
-                                        activeSection={activeSection}
-                                        cards={filteredDashboardCards}
-                                        orders={filteredOrders}
-                                        customers={filteredCustomers}
-                                        onAddOrder={handleAddOrder}
-                                        onAddCustomer={handleAddCustomer}
-                                        searchQuery={searchQuery}
-                                        isEmpty={isDashboardEmpty}
-                                        isOrdersEmpty={isOrdersEmpty}
-                                        isCustomersEmpty={isCustomersEmpty}
-                                    />
-                                }
-                            />
-
-                            {/* Route untuk halaman Orders (path: /orders) */}
-                            <Route
-                                path="/orders"
-                                element={
-                                    <Orders
-                                        orders={filteredOrders}
-                                        onAddOrder={handleAddOrder}
-                                        isEmpty={isOrdersEmpty}
-                                    />
-                                }
-                            />
-
-                            {/* Route untuk halaman Customers (path: /customers) */}
-                            <Route
-                                path="/customers"
-                                element={
-                                    <Customers
-                                        customers={filteredCustomers}
-                                        onAddCustomer={handleAddCustomer}
-                                        isEmpty={isCustomersEmpty}
-                                    />
-                                }
-                            />
-
-                            {/* Route untuk halaman 404 Not Found (path: *) */}
-                            {/* path="*" mencocokkan semua URL yang belum terdefinisi */}
-                            <Route path="*" element={<NotFound />} />
-                        </Routes>
+                        <Dashboard
+                            activeSection={activeSection}
+                            cards={filteredDashboardCards}
+                            orders={filteredOrders}
+                            customers={filteredCustomers}
+                            onAddOrder={handleAddOrder}
+                            onAddCustomer={handleAddCustomer}
+                            searchQuery={searchQuery}
+                            isEmpty={isDashboardEmpty}
+                            isOrdersEmpty={isOrdersEmpty}
+                            isCustomersEmpty={isCustomersEmpty}
+                        />
                     </div>
                 </main>
             </div>
         </div>
     );
 }
+
+createRoot(document.getElementById("root")).render(<App />);
