@@ -59,7 +59,8 @@
 }
 
 #sidebar {
-    width: 200px;
+    width: 240px;
+    flex-shrink: 0;
     min-height: 100vh;
     padding: 24px 16px;
     display: flex;
@@ -68,6 +69,9 @@
     background: #ffffff;
     color: #111827;
     border-right: 1px solid #e5e7eb;
+    border-left: none;
+    position: sticky;
+    top: 0;
     overflow: hidden;
 }
 
@@ -499,9 +503,9 @@
 }
 
 #dashboard-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
     margin-bottom: 24px;
 }
 
@@ -509,17 +513,15 @@
 #dashboard-delivered,
 #dashboard-canceled,
 #dashboard-revenue {
-    flex: 1;
-    min-width: 200px;
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 16px;
-    border-radius: 8px;
+    padding: 16px 18px;
+    border-radius: 16px;
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    box-shadow: none;
-    transition: background 0.2s ease;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 #dashboard-orders:hover,
@@ -527,6 +529,48 @@
 #dashboard-canceled:hover,
 #dashboard-revenue:hover {
     background: #f9fafb;
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+}
+
+#dashboard-secondary-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+#dashboard-activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dashboard-activity-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+}
+
+.dashboard-activity-title {
+    font-weight: 600;
+    color: #111827;
+}
+
+.dashboard-activity-meta {
+    font-size: 0.82rem;
+    color: #6b7280;
+}
+
+.dashboard-activity-value {
+    font-family: var(--font-barlow);
+    font-weight: 700;
+    color: #111827;
 }
 
 .stat-icon {
@@ -898,7 +942,7 @@
 
 @media (max-width: 1024px) {
     #sidebar {
-        width: 160px;
+        width: 220px;
         padding: 20px 12px;
     }
 
@@ -931,16 +975,15 @@
         display: none;
     }
 
-    #dashboard-grid {
-        flex-direction: column;
-        gap: 8px;
+    #dashboard-secondary-grid {
+        grid-template-columns: 1fr;
     }
 
     #dashboard-orders,
     #dashboard-delivered,
     #dashboard-canceled,
     #dashboard-revenue {
-        padding: 10px 12px;
+        padding: 12px 14px;
     }
 
     .panel-table {
@@ -954,12 +997,12 @@
 }
 
 @media (max-width: 768px) {
-    #dashboard-grid {
-        flex-direction: column;
-        gap: 8px;
-    }
-
     #sidebar {
+        width: 100%;
+        min-height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
         padding: 20px 16px;
     }
 

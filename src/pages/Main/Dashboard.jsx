@@ -308,6 +308,53 @@ export default function Dashboard({
                     ))
                 )}
             </div>
+
+            <div id="dashboard-secondary-grid">
+                <div className="panel-card">
+                    <div className="panel-title">Recent Orders</div>
+                    <div className="table-wrapper">
+                        <table className="panel-table">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Item</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {orders.slice(0, 5).map((order) => (
+                                    <tr key={order.id}>
+                                        <td>{order.id}</td>
+                                        <td>{order.customer}</td>
+                                        <td>{order.item}</td>
+                                        <td>
+                                            <span className={getOrderStatusClass(order.status)}>{order.status}</span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div className="panel-card">
+                    <div className="panel-title">Customer Activity</div>
+                    <div id="dashboard-activity-list">
+                        {customers.slice(0, 4).map((customer) => (
+                            <div key={customer.id} className="dashboard-activity-item">
+                                <div>
+                                    <div className="dashboard-activity-title">{customer.name}</div>
+                                    <div className="dashboard-activity-meta">
+                                        {customer.city} · {customer.tier}
+                                    </div>
+                                </div>
+                                <div className="dashboard-activity-value">{customer.totalOrder} orders</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

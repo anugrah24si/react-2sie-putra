@@ -1,13 +1,17 @@
 import { useState, useMemo } from "react";
 import { Routes, Route } from "react-router-dom";
 import "./App.css";
-import Sidebar from "./layout/Sidebar";
-import Header from "./layout/Header";
-import PageHeader from "./components/PageHeader";
-import Dashboard from "./pages/Dashboard";
-import Orders from "./pages/Orders";
-import Customers from "./pages/Customers";
-import NotFound from "./pages/NotFound";
+import MainLayout from "./layout/MainLayout";
+import Dashboard from "./pages/Main/Dashboard";
+import Orders from "./pages/Main/Orders";
+import Customers from "./pages/Main/Customers";
+import NotFound from "./pages/Main/NotFound";
+import AuthLayout from "./layout/AuthLayout";
+import Login from "./pages/Auth/Login";
+import Register from "./pages/Auth/Register";
+import Forgot from "./pages/Auth/Forgot";
+
+
 
 // Data awal untuk menu sidebar
 const initialMenuItems = [
@@ -305,8 +309,8 @@ export default function App() {
         activeSection === "orders"
             ? "Orders"
             : activeSection === "customers"
-              ? "Customers"
-              : "Dashboard";
+                ? "Customers"
+                : "Dashboard";
 
     /**
      * pageBreadcrumb - Menentukan breadcrumb sesuai route yang aktif
@@ -315,8 +319,8 @@ export default function App() {
         activeSection === "orders"
             ? "Home / Orders / Order List"
             : activeSection === "customers"
-              ? "Home / Customers / Customer List"
-              : "Home / Home Detail / Home Very Detail";
+                ? "Home / Customers / Customer List"
+                : "Home / Home Detail / Home Very Detail";
 
     // Mengecek apakah data kosong untuk menampilkan pesan empty state
     const isDashboardEmpty = filteredDashboardCards.length === 0;
@@ -324,86 +328,68 @@ export default function App() {
     const isCustomersEmpty = filteredCustomers.length === 0;
 
     return (
-        <div className="min-h-screen bg-latar font-poppins text-teks">
-            <div className="flex min-h-screen flex-col lg:flex-row">
-                {/* Sidebar Navigation */}
-                <Sidebar
-                    activeSection={activeSection}
-                    menuItems={filteredMenuItems}
-                    onMenuClick={handleSectionChange}
-                    onAddMenu={handleAddMenu}
-                    onRemoveMenu={handleRemoveMenu}
+        <MainLayout
+            activeSection={activeSection}
+            menuItems={filteredMenuItems}
+            onMenuClick={handleSectionChange}
+            onAddMenu={handleAddMenu}
+            onRemoveMenu={handleRemoveMenu}
+            searchValue={searchQuery}
+            onSearchChange={handleSearchChange}
+            pageTitle={pageTitle}
+            pageBreadcrumb={pageBreadcrumb}
+
+        >
+            <Routes>
+                <Route element={<AuthLayout />}>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/forgot" element={<Forgot />} />
+                </Route>
+                <Route
+                    path="/"
+                    element={
+                        <Dashboard
+                            activeSection={activeSection}
+                            cards={filteredDashboardCards}
+                            orders={filteredOrders}
+                            customers={filteredCustomers}
+                            onAddOrder={handleAddOrder}
+                            onAddCustomer={handleAddCustomer}
+                            searchQuery={searchQuery}
+                            isEmpty={isDashboardEmpty}
+                            isOrdersEmpty={isOrdersEmpty}
+                            isCustomersEmpty={isCustomersEmpty}
+                        />
+                    }
                 />
 
-                {/* Main Content Area dengan Routes */}
-                <main className="flex-1 p-4 md:p-6 xl:p-8">
-                    <Header
-                        searchValue={searchQuery}
-                        onSearchChange={handleSearchChange}
-                    />
-                    <div className="mt-6 space-y-6">
-                        <PageHeader
-                            title={pageTitle}
-                            subtitle={pageBreadcrumb}
-                            actionLabel="Add Button"
+                <Route
+                    path="/orders"
+                    element={
+                        <Orders
+                            orders={filteredOrders}
+                            onAddOrder={handleAddOrder}
+                            isEmpty={isOrdersEmpty}
                         />
+                    }
+                />
 
-                        {/* 
-                            Routes Component - Menampilkan komponen sesuai dengan URL path
-                            Setiap <Route> mendefinisikan path dan element yang akan ditampilkan
-                            path="/" untuk Dashboard, path="/orders" untuk Orders, dll.
-                        */}
-                        <Routes>
-                            {/* Route untuk halaman Dashboard (path: /) */}
-                            <Route
-                                path="/"
-                                element={
-                                    <Dashboard
-                                        activeSection={activeSection}
-                                        cards={filteredDashboardCards}
-                                        orders={filteredOrders}
-                                        customers={filteredCustomers}
-                                        onAddOrder={handleAddOrder}
-                                        onAddCustomer={handleAddCustomer}
-                                        searchQuery={searchQuery}
-                                        isEmpty={isDashboardEmpty}
-                                        isOrdersEmpty={isOrdersEmpty}
-                                        isCustomersEmpty={isCustomersEmpty}
-                                    />
-                                }
-                            />
+                <Route
+                    path="/customers"
+                    element={
+                        <Customers
+                            customers={filteredCustomers}
+                            onAddCustomer={handleAddCustomer}
+                            isEmpty={isCustomersEmpty}
+                        />
+                    }
+                />
 
-                            {/* Route untuk halaman Orders (path: /orders) */}
-                            <Route
-                                path="/orders"
-                                element={
-                                    <Orders
-                                        orders={filteredOrders}
-                                        onAddOrder={handleAddOrder}
-                                        isEmpty={isOrdersEmpty}
-                                    />
-                                }
-                            />
+                <Route path="*" element={<NotFound />} />
+                
+            </Routes>
 
-                            {/* Route untuk halaman Customers (path: /customers) */}
-                            <Route
-                                path="/customers"
-                                element={
-                                    <Customers
-                                        customers={filteredCustomers}
-                                        onAddCustomer={handleAddCustomer}
-                                        isEmpty={isCustomersEmpty}
-                                    />
-                                }
-                            />
-
-                            {/* Route untuk halaman 404 Not Found (path: *) */}
-                            {/* path="*" mencocokkan semua URL yang belum terdefinisi */}
-                            <Route path="*" element={<NotFound />} />
-                        </Routes>
-                    </div>
-                </main>
-            </div>
-        </div>
+        </MainLayout>
     );
 }

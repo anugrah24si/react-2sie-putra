@@ -120,7 +120,7 @@ export default function Sidebar({ activeSection, menuItems, onMenuClick, onAddMe
             <div id="sidebar-footer">
                 <div id="footer-card">
                     <div id="footer-text">
-                        <span>Please organize your menus through button below!</span>
+                        <span>Fitur tambah menu tapi belum bisa digunakan!</span>
                         <button id="add-menu-button" type="button" onClick={onAddMenu}>
                             <span>Tambah Menu</span>
                         </button>
