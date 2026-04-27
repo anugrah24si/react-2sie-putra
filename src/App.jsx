@@ -1,15 +1,28 @@
-import { useState, useMemo } from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { Suspense, useState, useMemo } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
-import MainLayout from "./layout/MainLayout";
-import Dashboard from "./pages/Main/Dashboard";
-import Orders from "./pages/Main/Orders";
-import Customers from "./pages/Main/Customers";
-import NotFound from "./pages/Main/NotFound";
-import AuthLayout from "./layout/AuthLayout";
-import Login from "./pages/Auth/Login";
-import Register from "./pages/Auth/Register";
-import Forgot from "./pages/Auth/Forgot";
+//import Loading from "./components/Loading";
+// import Orders from "./pages/Main/Orders";
+// import MainLayout from "./layout/MainLayout";
+// import Dashboard from "./pages/Main/Dashboard";
+// import Customers from "./pages/Main/Customers";
+// import NotFound from "./pages/Main/NotFound";
+// import AuthLayout from "./layout/AuthLayout";
+// import Login from "./pages/Auth/Login";
+// import Register from "./pages/Auth/Register";
+// import Forgot from "./pages/Auth/Forgot";
+
+const MainLayout = React.lazy(() => import("./layout/MainLayout"));
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const Orders = React.lazy(() => import("./pages/Main/Orders"));
+const Customers = React.lazy(() => import("./pages/Main/Customers"));
+const NotFound = React.lazy(() => import("./pages/Main/NotFound"));
+const AuthLayout = React.lazy(() => import("./layout/AuthLayout"));
+const Login = React.lazy(() => import("./pages/Auth/Login"));
+const Register = React.lazy(() => import("./pages/Auth/Register"));
+const Forgot = React.lazy(() => import("./pages/Auth/Forgot"));
+const Loading = React.lazy(() => import("./components/Loading"));
+
 
 
 
@@ -82,6 +95,9 @@ function getNextId(items) {
  * - State management untuk data orders, customers, dan menu
  */
 export default function App() {
+    const location = useLocation();
+    const isAuthPage = ["/login", "/register", "/forgot"].includes(location.pathname);
+
     // State untuk menu yang sedang aktif (untuk styling di sidebar)
     const [activeSection, setActiveSection] = useState("dashboard");
     // State untuk menyimpan nilai input search
@@ -327,69 +343,98 @@ export default function App() {
     const isOrdersEmpty = filteredOrders.length === 0;
     const isCustomersEmpty = filteredCustomers.length === 0;
 
+    if (isAuthPage) {
+        return (
+            <Suspense fallback={<div className="p-4 text-sm text-gray-500">Loading app...</div>}>
+                <Routes>
+                    <Route element={<AuthLayout />}>
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route path="/forgot" element={<Forgot />} />
+                    </Route>
+                    <Route path="*" element={<NotFound />} />
+                </Routes>
+            </Suspense>
+        );
+    }
+
     return (
-        <MainLayout
-            activeSection={activeSection}
-            menuItems={filteredMenuItems}
-            onMenuClick={handleSectionChange}
-            onAddMenu={handleAddMenu}
-            onRemoveMenu={handleRemoveMenu}
-            searchValue={searchQuery}
-            onSearchChange={handleSearchChange}
-            pageTitle={pageTitle}
-            pageBreadcrumb={pageBreadcrumb}
+       <Suspense fallback={<Loading />}>
+            <MainLayout
+                activeSection={activeSection}
+                menuItems={filteredMenuItems}
+                onMenuClick={handleSectionChange}
+                onAddMenu={handleAddMenu}
+                onRemoveMenu={handleRemoveMenu}
+                searchValue={searchQuery}
+                onSearchChange={handleSearchChange}
+                pageTitle={pageTitle}
+                pageBreadcrumb={pageBreadcrumb}
+            >
+                <Routes>
+                    <Route
+                        path="/"
+                        element={
+                            <Dashboard
+                                activeSection={activeSection}
+                                cards={filteredDashboardCards}
+                                orders={filteredOrders}
+                                customers={filteredCustomers}
+                                onAddOrder={handleAddOrder}
+                                onAddCustomer={handleAddCustomer}
+                                searchQuery={searchQuery}
+                                isEmpty={isDashboardEmpty}
+                                isOrdersEmpty={isOrdersEmpty}
+                                isCustomersEmpty={isCustomersEmpty}
+                            />
+                        }
+                    />
 
-        >
-            <Routes>
-                <Route element={<AuthLayout />}>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/forgot" element={<Forgot />} />
-                </Route>
-                <Route
-                    path="/"
-                    element={
-                        <Dashboard
-                            activeSection={activeSection}
-                            cards={filteredDashboardCards}
-                            orders={filteredOrders}
-                            customers={filteredCustomers}
-                            onAddOrder={handleAddOrder}
-                            onAddCustomer={handleAddCustomer}
-                            searchQuery={searchQuery}
-                            isEmpty={isDashboardEmpty}
-                            isOrdersEmpty={isOrdersEmpty}
-                            isCustomersEmpty={isCustomersEmpty}
-                        />
-                    }
-                />
+                    {/* Kode sebelumnya (disimpan sebagai komentar, tidak dihapus):
+                    <Route
+                        path="/"
+                        element={
+                            <Dashboard
+                                activeSection={activeSection}
+                                cards={filteredDashboardCards}
+                                orders={filteredOrders}
+                                customers={filteredCustomers}
+                                onAddOrder={handleAddOrder}
+                                onAddCustomer={handleAddCustomer}
+                                searchQuery={searchQuery}
+                                isEmpty={isDashboardEmpty}
+                                isOrdersEmpty={isOrdersEmpty}
+                                isCustomersEmpty={isCustomersEmpty}
+                            />
+                        }
+                    />
+                    */}
 
-                <Route
-                    path="/orders"
-                    element={
-                        <Orders
-                            orders={filteredOrders}
-                            onAddOrder={handleAddOrder}
-                            isEmpty={isOrdersEmpty}
-                        />
-                    }
-                />
+                    <Route
+                        path="/orders"
+                        element={
+                            <Orders
+                                orders={filteredOrders}
+                                onAddOrder={handleAddOrder}
+                                isEmpty={isOrdersEmpty}
+                            />
+                        }
+                    />
 
-                <Route
-                    path="/customers"
-                    element={
-                        <Customers
-                            customers={filteredCustomers}
-                            onAddCustomer={handleAddCustomer}
-                            isEmpty={isCustomersEmpty}
-                        />
-                    }
-                />
+                    <Route
+                        path="/customers"
+                        element={
+                            <Customers
+                                customers={filteredCustomers}
+                                onAddCustomer={handleAddCustomer}
+                                isEmpty={isCustomersEmpty}
+                            />
+                        }
+                    />
 
-                <Route path="*" element={<NotFound />} />
-                
-            </Routes>
-
-        </MainLayout>
+                    <Route path="*" element={<NotFound />} />
+                </Routes>
+            </MainLayout>
+        </Suspense>
     );
 }

@@ -16,7 +16,7 @@ function StatCard({ id, icon: Icon, value, label }) {
             }
         >
             <div className="stat-icon">{createElement(Icon)}</div>
-            <div className="stat-info">
+            <div className="stat-info"> 
                 <span className="stat-count">{value}</span>
                 <span className="stat-label">{label}</span>
             </div>
