@@ -16,6 +16,8 @@ const MainLayout = React.lazy(() => import("./layout/MainLayout"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const Orders = React.lazy(() => import("./pages/Main/Orders"));
 const Customers = React.lazy(() => import("./pages/Main/Customers"));
+const Products = React.lazy(() => import("./pages/Main/Products"));
+const ProductDetail = React.lazy(() => import("./pages/Main/ProductDetail"));
 const NotFound = React.lazy(() => import("./pages/Main/NotFound"));
 const AuthLayout = React.lazy(() => import("./layout/AuthLayout"));
 const Login = React.lazy(() => import("./pages/Auth/Login"));
@@ -31,6 +33,7 @@ const initialMenuItems = [
     { id: "dashboard", label: "Dashboard", removable: false },
     { id: "orders", label: "Orders", removable: false },
     { id: "customers", label: "Customers", removable: false },
+    { id: "products", label: "Products", removable: false },
 ];
 
 // Data awal untuk orders (pesanan)
@@ -326,7 +329,9 @@ export default function App() {
             ? "Orders"
             : activeSection === "customers"
                 ? "Customers"
-                : "Dashboard";
+                : activeSection === "products"
+                    ? "Products"
+                    : "Dashboard";
 
     /**
      * pageBreadcrumb - Menentukan breadcrumb sesuai route yang aktif
@@ -336,7 +341,9 @@ export default function App() {
             ? "Home / Orders / Order List"
             : activeSection === "customers"
                 ? "Home / Customers / Customer List"
-                : "Home / Home Detail / Home Very Detail";
+                : activeSection === "products"
+                    ? "Home / Products / Product List"
+                    : "Home / Home Detail / Home Very Detail";
 
     // Mengecek apakah data kosong untuk menampilkan pesan empty state
     const isDashboardEmpty = filteredDashboardCards.length === 0;
@@ -429,6 +436,20 @@ export default function App() {
                                 onAddCustomer={handleAddCustomer}
                                 isEmpty={isCustomersEmpty}
                             />
+                        }
+                    />
+
+                    <Route
+                        path="/products/:id"
+                        element={
+                            <ProductDetail />
+                        }
+                    />
+
+                    <Route
+                        path="/products"
+                        element={
+                            <Products isEmpty={false} />
                         }
                     />
 
