@@ -24,7 +24,7 @@ const Login = React.lazy(() => import("./pages/Auth/Login"));
 const Register = React.lazy(() => import("./pages/Auth/Register"));
 const Forgot = React.lazy(() => import("./pages/Auth/Forgot"));
 const Loading = React.lazy(() => import("./components/Loading"));
-
+const Components = React.lazy(() => import("./pages/Main/Components"));
 
 
 
@@ -34,6 +34,7 @@ const initialMenuItems = [
     { id: "orders", label: "Orders", removable: false },
     { id: "customers", label: "Customers", removable: false },
     { id: "products", label: "Products", removable: false },
+    { id: "components", label: "Components", removable: false },
 ];
 
 // Data awal untuk orders (pesanan)
@@ -134,6 +135,7 @@ export default function App() {
         ];
     }, [ordersData]);
 
+    
     /**
      * filteredMenuItems - Menu yang sudah difilter berdasarkan search
      * Saat ini mengembalikan semua menu (tidak difilter)
@@ -331,7 +333,9 @@ export default function App() {
                 ? "Customers"
                 : activeSection === "products"
                     ? "Products"
-                    : "Dashboard";
+                    : activeSection === "components"
+                        ? "Components"
+                        : "Dashboard";
 
     /**
      * pageBreadcrumb - Menentukan breadcrumb sesuai route yang aktif
@@ -343,7 +347,9 @@ export default function App() {
                 ? "Home / Customers / Customer List"
                 : activeSection === "products"
                     ? "Home / Products / Product List"
-                    : "Home / Home Detail / Home Very Detail";
+                    : activeSection === "components"
+                        ? "Home / Components / Component List"
+                        : "Home / Home Detail / Home Very Detail";
 
     // Mengecek apakah data kosong untuk menampilkan pesan empty state
     const isDashboardEmpty = filteredDashboardCards.length === 0;
@@ -450,6 +456,13 @@ export default function App() {
                         path="/products"
                         element={
                             <Products isEmpty={false} />
+                        }
+                    />
+
+                    <Route
+                        path="/components"
+                        element={
+                            <Components />
                         }
                     />
 
