@@ -114,7 +114,7 @@ export default function Products({ isEmpty }) {
                             {/* Body tabel dengan data produk */}
                             <tbody>
                                 {filteredProducts.map((product, index) => (
-                                    <tr 
+                                    <tr
                                         key={product.id}
                                         style={{
                                             borderBottom: "1px solid #333",
@@ -124,7 +124,7 @@ export default function Products({ isEmpty }) {
                                         <td style={{ padding: "12px" }}>{product.id}</td>
                                         <td style={{ padding: "12px" }}>
                                             {/* Link ke halaman detail produk berdasarkan ID */}
-                                            <Link 
+                                            <Link
                                                 to={`/products/${product.id}`}
                                                 style={{
                                                     color: "#10b981",

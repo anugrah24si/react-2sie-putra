@@ -83,7 +83,7 @@ export default function ProductDetail() {
                     <div className="panel-title">Product Not Found</div>
                     <div id="dashboard-empty-state" style={{ textAlign: "center", padding: "40px" }}>
                         <p style={{ color: "#ef4444", marginBottom: "20px" }}>{error}</p>
-                        <button 
+                        <button
                             onClick={() => navigate("/products")}
                             style={{
                                 padding: "10px 20px",
@@ -126,7 +126,7 @@ export default function ProductDetail() {
                 {/* Header dengan tombol kembali */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
                     <div className="panel-title">Product Detail</div>
-                    <button 
+                    <button
                         onClick={() => navigate("/products")}
                         style={{
                             padding: "8px 16px",
@@ -145,9 +145,9 @@ export default function ProductDetail() {
                 </div>
 
                 {/* Layout: 2 kolom - kiri info utama, kanan spesifikasi */}
-                <div style={{ 
-                    display: "grid", 
-                    gridTemplateColumns: "2fr 1fr", 
+                <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "2fr 1fr",
                     gap: "40px",
                     padding: "30px",
                     backgroundColor: "rgba(255, 255, 255, 0.05)",
@@ -230,9 +230,9 @@ export default function ProductDetail() {
                                 <label style={{ fontWeight: 600, color: "#999", fontSize: "12px", textTransform: "uppercase" }}>
                                     Price
                                 </label>
-                                <p style={{ 
-                                    margin: "8px 0 0 0", 
-                                    fontSize: "24px", 
+                                <p style={{
+                                    margin: "8px 0 0 0",
+                                    fontSize: "24px",
                                     fontWeight: 700,
                                     color: "#10b981"
                                 }}>
@@ -243,15 +243,15 @@ export default function ProductDetail() {
                     </div>
 
                     {/* Kolom Kanan: Ringkasan Informasi Stok dan Spesifikasi */}
-                    <div style={{ 
+                    <div style={{
                         display: "flex",
                         flexDirection: "column",
                         gap: "20px"
                     }}>
                         {/* Card Stok */}
-                        <div style={{ 
-                            backgroundColor: "rgba(255, 255, 255, 0.08)", 
-                            padding: "20px", 
+                        <div style={{
+                            backgroundColor: "rgba(255, 255, 255, 0.08)",
+                            padding: "20px",
                             borderRadius: "8px",
                             border: `2px solid ${stockStatus.color}`,
                         }}>
@@ -267,9 +267,9 @@ export default function ProductDetail() {
                         </div>
 
                         {/* Card Ringkasan Harga */}
-                        <div style={{ 
-                            backgroundColor: "rgba(255, 255, 255, 0.08)", 
-                            padding: "20px", 
+                        <div style={{
+                            backgroundColor: "rgba(255, 255, 255, 0.08)",
+                            padding: "20px",
                             borderRadius: "8px",
                         }}>
                             <p style={{ margin: 0, color: "#999", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
@@ -281,9 +281,9 @@ export default function ProductDetail() {
                         </div>
 
                         {/* Card Info Tambahan */}
-                        <div style={{ 
-                            backgroundColor: "rgba(255, 255, 255, 0.08)", 
-                            padding: "20px", 
+                        <div style={{
+                            backgroundColor: "rgba(255, 255, 255, 0.08)",
+                            padding: "20px",
                             borderRadius: "8px",
                         }}>
                             <p style={{ margin: 0, color: "#999", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>

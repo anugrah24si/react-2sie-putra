@@ -11,7 +11,7 @@ export default function AuthLayout() {
                     </h1>
                 </div>
 
-                <Outlet/>
+                <Outlet />
 
                 <p className="text-center text-sm text-gray-500 mt-6">
                     © 2025 Gacor Restaurant Admin Dashboard. All rights

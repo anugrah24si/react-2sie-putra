@@ -9,14 +9,14 @@ function StatCard({ id, icon: Icon, value, label }) {
                 id === "orders"
                     ? "dashboard-orders"
                     : id === "delivered"
-                      ? "dashboard-delivered"
-                      : id === "canceled"
-                        ? "dashboard-canceled"
-                        : "dashboard-revenue"
+                        ? "dashboard-delivered"
+                        : id === "canceled"
+                            ? "dashboard-canceled"
+                            : "dashboard-revenue"
             }
         >
             <div className="stat-icon">{createElement(Icon)}</div>
-            <div className="stat-info"> 
+            <div className="stat-info">
                 <span className="stat-count">{value}</span>
                 <span className="stat-label">{label}</span>
             </div>
