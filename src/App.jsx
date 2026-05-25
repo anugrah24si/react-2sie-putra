@@ -16,6 +16,7 @@ const Register = React.lazy(() => import("./pages/Auth/Register"));
 const Forgot = React.lazy(() => import("./pages/Auth/Forgot"));
 const Loading = React.lazy(() => import("./components/Loading"));
 const Components = React.lazy(() => import("./pages/Main/Components"));
+const FiturXyz = React.lazy(() => import("./pages/Main/FiturXyz"));
 
 // Data menu sidebar
 const MENU_ITEMS = [
@@ -24,6 +25,7 @@ const MENU_ITEMS = [
     { id: "customers", label: "Customers" },
     { id: "products", label: "Products" },
     { id: "components", label: "Components" },
+    { id: "fiturxyz", label: "Fitur XYZ" },
 ];
 
 // Data orders awal
@@ -156,6 +158,7 @@ export default function App() {
         customers: { title: "Customers", breadcrumb: "Home / Customers / Customer List" },
         products: { title: "Products", breadcrumb: "Home / Products / Product List" },
         components: { title: "Components", breadcrumb: "Home / Components / Component List" },
+        fiturxyz: { title: "Fitur XYZ", breadcrumb: "Home / Fitur XYZ / XYZ Page" },
     };
 
     // Tentukan active section berdasarkan path
@@ -164,6 +167,7 @@ export default function App() {
     else if (currentPath.includes("/customers")) currentSection = "customers";
     else if (currentPath.includes("/products")) currentSection = "products";
     else if (currentPath.includes("/components")) currentSection = "components";
+    else if (currentPath.includes("/fiturxyz")) currentSection = "fiturxyz";
 
     const currentPage = pageInfo[currentSection] || pageInfo.dashboard;
 
@@ -349,6 +353,25 @@ export default function App() {
                             pageBreadcrumb="Home / Components / Component List"
                         >
                             <Components />
+                        </MainLayout>
+                    }
+                />
+
+                <Route
+                    path="/fiturxyz"
+                    element={
+                        <MainLayout
+                            activeSection="fiturxyz"
+                            menuItems={MENU_ITEMS}
+                            onMenuClick={setActiveSection}
+                            onAddMenu={() => { }}
+                            onRemoveMenu={() => { }}
+                            searchValue={searchQuery}
+                            onSearchChange={(e) => setSearchQuery(e.target.value)}
+                            pageTitle="Fitur XYZ"
+                            pageBreadcrumb="Home / Fitur XYZ / XYZ Page"
+                        >
+                            <FiturXyz />
                         </MainLayout>
                     }
                 />
