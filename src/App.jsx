@@ -1,10 +1,9 @@
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useState, useMemo } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 
-// Lazy loading components
 const MainLayout = React.lazy(() => import("./layout/MainLayout"));
-const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const Dashboard = React.lazy(() => import("./pages/Main/Dashboard"));
 const Orders = React.lazy(() => import("./pages/Main/Orders"));
 const Customers = React.lazy(() => import("./pages/Main/Customers"));
 const Products = React.lazy(() => import("./pages/Main/Products"));
@@ -18,18 +17,18 @@ const Loading = React.lazy(() => import("./components/Loading"));
 const Components = React.lazy(() => import("./pages/Main/Components"));
 const FiturXyz = React.lazy(() => import("./pages/Main/FiturXyz"));
 
-// Data menu sidebar
-const MENU_ITEMS = [
-    { id: "dashboard", label: "Dashboard" },
-    { id: "orders", label: "Orders" },
-    { id: "customers", label: "Customers" },
-    { id: "products", label: "Products" },
-    { id: "components", label: "Components" },
-    { id: "fiturxyz", label: "Fitur XYZ" },
+// Data awal untuk menu sidebar
+const initialMenuItems = [
+    { id: "dashboard", label: "Dashboard", removable: false },
+    { id: "orders", label: "Orders", removable: false },
+    { id: "customers", label: "Customers", removable: false },
+    { id: "products", label: "Products", removable: false },
+    { id: "components", label: "Components", removable: false },
+    { id: "fiturxyz", label: "Fitur XYZ", removable: false },
 ];
 
-// Data orders awal
-const INITIAL_ORDERS = [
+// Data awal untuk orders (pesanan)
+const orderRows = [
     { id: "001", customer: "Anugrah", item: "Ayam", total: "Rp.78.000", status: "Preparing" },
     { id: "002", customer: "Putra", item: "Kebab", total: "Rp.92.000", status: "On Delivery" },
     { id: "003", customer: "Fajar", item: "Burger", total: "Rp.105.000", status: "Delivered" },
@@ -37,8 +36,8 @@ const INITIAL_ORDERS = [
     { id: "005", customer: "Toyy", item: "Pizza", total: "Rp.88.000", status: "Preparing" },
 ];
 
-// Data customers awal
-const INITIAL_CUSTOMERS = [
+// Data awal untuk customers (pelanggan)
+const customerRows = [
     { id: "001", name: "Anugrah", email: "Anugrah@email.com", totalOrder: 14, city: "Bandung", tier: "Gold" },
     { id: "002", name: "Putra", email: "Putra@email.com", totalOrder: 9, city: "Jakarta", tier: "Silver" },
     { id: "003", name: "Fajar", email: "Fajar@email.com", totalOrder: 21, city: "Surabaya", tier: "Platinum" },
@@ -46,43 +45,54 @@ const INITIAL_CUSTOMERS = [
     { id: "005", name: "Toyy", email: "Toyy@email.com", totalOrder: 12, city: "Semarang", tier: "Gold" },
 ];
 
-// Helper: Ubah rupiah ke angka
+/**
+ * parseRupiah - Mengubah teks rupiah seperti Rp.78.000 menjadi angka
+ */
 function parseRupiah(value) {
-    return Number(String(value).replace(/[^0-9]/g, "") || 0);
+    const onlyDigits = String(value).replace(/[^0-9]/g, "");
+    return Number(onlyDigits || 0);
 }
 
-// Helper: Format angka ke rupiah
+/**
+ * formatRupiah - Memformat angka menjadi tampilan rupiah sederhana
+ */
 function formatRupiah(value) {
     return `Rp.${new Intl.NumberFormat("id-ID").format(value)}`;
 }
 
-// Helper: Generate ID berikutnya
+/**
+ * getNextId - Menghasilkan ID 3 digit berikutnya dari daftar item
+ */
 function getNextId(items) {
-    const maxId = items.reduce((max, item) => {
-        const num = Number(String(item.id).replace(/[^0-9]/g, ""));
-        return num > max ? num : max;
+    const maxId = items.reduce((maxValue, item) => {
+        const numeric = Number(String(item.id).replace(/[^0-9]/g, ""));
+        return numeric > maxValue ? numeric : maxValue;
     }, 0);
+
     return String(maxId + 1).padStart(3, "0");
 }
 
 export default function App() {
     const location = useLocation();
-    const currentPath = location.pathname.toLowerCase();
+    const isAuthPage = ["/login", "/register", "/forgot"].includes(location.pathname);
 
-    // State sederhana
     const [activeSection, setActiveSection] = useState("dashboard");
     const [searchQuery, setSearchQuery] = useState("");
-    const [orders, setOrders] = useState(INITIAL_ORDERS);
-    const [customers, setCustomers] = useState(INITIAL_CUSTOMERS);
+    const [menuItems, setMenuItems] = useState(initialMenuItems);
+    const [ordersData, setOrdersData] = useState(orderRows);
+    const [customersData, setCustomersData] = useState(customerRows);
 
-    // Hitung statistik dashboard
-    function getDashboardCards() {
-        const totalOrders = orders.length;
-        const totalDelivered = orders.filter(o => o.status === "Delivered").length;
-        const totalCanceled = orders.filter(o => o.status === "Canceled").length;
-        const totalRevenue = orders
-            .filter(o => o.status !== "Canceled")
-            .reduce((sum, o) => sum + parseRupiah(o.total), 0);
+    /**
+     * dashboardCards - Menghitung statistik dashboard dari data orders
+     */
+    const dashboardCards = useMemo(() => {
+        const totalOrders = ordersData.length;
+        const totalDelivered = ordersData.filter((item) => item.status === "Delivered").length;
+        const totalCanceled = ordersData.filter((item) => item.status === "Canceled").length;
+        const totalRevenue = ordersData.reduce(
+            (total, item) => total + (item.status === "Canceled" ? 0 : parseRupiah(item.total)),
+            0,
+        );
 
         return [
             { id: "orders", icon: "cart", value: String(totalOrders), label: "Total Orders" },
@@ -90,89 +100,183 @@ export default function App() {
             { id: "canceled", icon: "ban", value: String(totalCanceled), label: "Total Canceled" },
             { id: "revenue", icon: "money", value: formatRupiah(totalRevenue), label: "Total Revenue" },
         ];
-    }
+    }, [ordersData]);
 
-    // Filter data berdasarkan search
-    function filterData(data, fields) {
-        if (!searchQuery.trim()) return data;
-        const query = searchQuery.toLowerCase();
-        return data.filter(item =>
-            fields.some(field => String(item[field]).toLowerCase().includes(query))
-        );
-    }
+    const filteredMenuItems = useMemo(() => {
+        return menuItems;
+    }, [menuItems]);
 
-    const dashboardCards = getDashboardCards();
-    const filteredOrders = filterData(orders, ["id", "customer", "item", "status"]);
-    const filteredCustomers = filterData(customers, ["id", "name", "email", "city", "tier"]);
+    const filteredDashboardCards = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
 
-    // Handler untuk tambah order
-    function handleAddOrder(orderData) {
-        const newOrder = {
-            id: getNextId(orders),
-            customer: orderData.customer.trim(),
-            item: orderData.item.trim(),
-            total: formatRupiah(parseRupiah(orderData.total)),
-            status: orderData.status,
-        };
-        setOrders([newOrder, ...orders]);
-
-        const customerName = orderData.customer.trim().toLowerCase();
-        const existingCustomer = customers.find(c => c.name.toLowerCase() === customerName);
-
-        if (existingCustomer) {
-            setCustomers(customers.map(c =>
-                c.name.toLowerCase() === customerName
-                    ? { ...c, totalOrder: c.totalOrder + 1 }
-                    : c
-            ));
-        } else {
-            const newCustomer = {
-                id: getNextId(customers),
-                name: orderData.customer.trim(),
-                email: `${orderData.customer.trim().replace(/\s+/g, "").toLowerCase()}@email.com`,
-                totalOrder: 1,
-                city: "Unknown",
-                tier: "Bronze",
-            };
-            setCustomers([newCustomer, ...customers]);
+        if (activeSection !== "dashboard" || !query) {
+            return dashboardCards;
         }
+
+        return dashboardCards.filter((card) =>
+            card.label.toLowerCase().includes(query),
+        );
+    }, [activeSection, dashboardCards, searchQuery]);
+
+    const filteredOrders = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+
+        if (activeSection !== "orders" || !query) {
+            return ordersData;
+        }
+
+        return ordersData.filter((order) =>
+            [order.id, order.customer, order.item, order.status]
+                .join(" ")
+                .toLowerCase()
+                .includes(query),
+        );
+    }, [activeSection, ordersData, searchQuery]);
+
+    const filteredCustomers = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+
+        if (activeSection !== "customers" || !query) {
+            return customersData;
+        }
+
+        return customersData.filter((customer) =>
+            [customer.id, customer.name, customer.email, customer.city, customer.tier]
+                .join(" ")
+                .toLowerCase()
+                .includes(query),
+        );
+    }, [activeSection, customersData, searchQuery]);
+
+    function handleSectionChange(sectionId) {
+        setActiveSection(sectionId);
     }
 
-    // Handler untuk tambah customer
-    function handleAddCustomer(customerData) {
-        const newCustomer = {
-            id: getNextId(customers),
-            name: customerData.name.trim(),
-            email: customerData.email.trim(),
-            totalOrder: Number(customerData.totalOrder || 0),
-            city: customerData.city.trim(),
-            tier: customerData.tier,
-        };
-        setCustomers([newCustomer, ...customers]);
+    function handleSearchChange(event) {
+        setSearchQuery(event.target.value);
     }
 
-    // Tentukan page title dan breadcrumb
-    const pageInfo = {
-        dashboard: { title: "Dashboard", breadcrumb: "Home / Home Detail / Home Very Detail" },
-        orders: { title: "Orders", breadcrumb: "Home / Orders / Order List" },
-        customers: { title: "Customers", breadcrumb: "Home / Customers / Customer List" },
-        products: { title: "Products", breadcrumb: "Home / Products / Product List" },
-        components: { title: "Components", breadcrumb: "Home / Components / Component List" },
-    };
+    function handleAddMenu() {
+        const newNumber = menuItems.filter((item) => item.id.startsWith("menu-")).length + 1;
 
-    // Tentukan active section berdasarkan path
-    let currentSection = "dashboard";
-    if (currentPath.includes("/orders")) currentSection = "orders";
-    else if (currentPath.includes("/customers")) currentSection = "customers";
-    else if (currentPath.includes("/products")) currentSection = "products";
-    else if (currentPath.includes("/components")) currentSection = "components";
+        setMenuItems((currentItems) => [
+            ...currentItems,
+            {
+                id: `menu-${newNumber}`,
+                label: `Menu ${newNumber}`,
+                removable: true,
+            },
+        ]);
+    }
 
-    const currentPage = pageInfo[currentSection] || pageInfo.dashboard;
+    function handleAddOrder(orderPayload) {
+        const newOrderId = getNextId(ordersData);
+        const normalizedTotal = formatRupiah(parseRupiah(orderPayload.total));
 
-    // Check untuk halaman auth
-    const isAuthPage = ["/login", "/register", "/forgot"].includes(currentPath);
+        setOrdersData((currentOrders) => [
+            {
+                id: newOrderId,
+                customer: orderPayload.customer.trim(),
+                item: orderPayload.item.trim(),
+                total: normalizedTotal,
+                status: orderPayload.status,
+            },
+            ...currentOrders,
+        ]);
 
-    // Render halaman Auth
+        setCustomersData((currentCustomers) => {
+            const targetName = orderPayload.customer.trim().toLowerCase();
+            const existingCustomer = currentCustomers.find(
+                (customer) => customer.name.toLowerCase() === targetName,
+            );
+
+            if (existingCustomer) {
+                return currentCustomers.map((customer) =>
+                    customer.name.toLowerCase() === targetName
+                        ? { ...customer, totalOrder: customer.totalOrder + 1 }
+                        : customer,
+                );
+            }
+
+            return [
+                {
+                    id: getNextId(currentCustomers),
+                    name: orderPayload.customer.trim(),
+                    email: `${orderPayload.customer.trim().replace(/\s+/g, "").toLowerCase()}@email.com`,
+                    totalOrder: 1,
+                    city: "Unknown",
+                    tier: "Bronze",
+                },
+                ...currentCustomers,
+            ];
+        });
+    }
+
+    function handleAddCustomer(customerPayload) {
+        const newCustomerId = getNextId(customersData);
+
+        setCustomersData((currentCustomers) => [
+            {
+                id: newCustomerId,
+                name: customerPayload.name.trim(),
+                email: customerPayload.email.trim(),
+                totalOrder: Number(customerPayload.totalOrder || 0),
+                city: customerPayload.city.trim(),
+                tier: customerPayload.tier,
+            },
+            ...currentCustomers,
+        ]);
+    }
+
+    function handleRemoveMenu(menuId) {
+        setMenuItems((currentItems) => {
+            const targetItem = currentItems.find((item) => item.id === menuId);
+
+            if (!targetItem?.removable) {
+                return currentItems;
+            }
+
+            const nextItems = currentItems.filter((item) => item.id !== menuId);
+
+            if (activeSection === menuId) {
+                const fallbackSection = nextItems[0]?.id ?? null;
+                setActiveSection(fallbackSection);
+            }
+
+            return nextItems;
+        });
+    }
+
+    const pageTitle =
+        activeSection === "orders"
+            ? "Orders"
+            : activeSection === "customers"
+                ? "Customers"
+                : activeSection === "products"
+                    ? "Products"
+                    : activeSection === "components"
+                        ? "Components"
+                        : activeSection === "fiturxyz"
+                            ? "Fitur XYZ"
+                            : "Dashboard";
+
+    const pageBreadcrumb =
+        activeSection === "orders"
+            ? "Home / Orders / Order List"
+            : activeSection === "customers"
+                ? "Home / Customers / Customer List"
+                : activeSection === "products"
+                    ? "Home / Products / Product List"
+                    : activeSection === "components"
+                        ? "Home / Components / Component List"
+                        : activeSection === "fiturxyz"
+                            ? "Home / Fitur XYZ / XYZ Page"
+                            : "Home / Home Detail / Home Very Detail";
+
+    const isDashboardEmpty = filteredDashboardCards.length === 0;
+    const isOrdersEmpty = filteredOrders.length === 0;
+    const isCustomersEmpty = filteredCustomers.length === 0;
+
     if (isAuthPage) {
         return (
             <Suspense fallback={<div className="p-4 text-sm text-gray-500">Loading app...</div>}>
@@ -182,201 +286,89 @@ export default function App() {
                         <Route path="/register" element={<Register />} />
                         <Route path="/forgot" element={<Forgot />} />
                     </Route>
+                    <Route path="*" element={<NotFound />} />
                 </Routes>
             </Suspense>
         );
     }
 
-    // Main App Routes
     return (
         <Suspense fallback={<Loading />}>
-            <Routes>
-                {/* Routes dengan MainLayout (sidebar) */}
-                <Route
-                    path="/"
-                    element={
-                        <MainLayout
-                            activeSection={currentSection}
-                            menuItems={MENU_ITEMS}
-                            onMenuClick={setActiveSection}
-                            onAddMenu={() => { }}
-                            onRemoveMenu={() => { }}
-                            searchValue={searchQuery}
-                            onSearchChange={(e) => setSearchQuery(e.target.value)}
-                            pageTitle={currentPage.title}
-                            pageBreadcrumb={currentPage.breadcrumb}
-                        >
+            <MainLayout
+                activeSection={activeSection}
+                menuItems={filteredMenuItems}
+                onMenuClick={handleSectionChange}
+                onAddMenu={handleAddMenu}
+                onRemoveMenu={handleRemoveMenu}
+                searchValue={searchQuery}
+                onSearchChange={handleSearchChange}
+                pageTitle={pageTitle}
+                pageBreadcrumb={pageBreadcrumb}
+            >
+                <Routes>
+                    <Route
+                        path="/"
+                        element={
                             <Dashboard
-                                activeSection="dashboard"
-                                cards={dashboardCards}
+                                activeSection={activeSection}
+                                cards={filteredDashboardCards}
                                 orders={filteredOrders}
                                 customers={filteredCustomers}
                                 onAddOrder={handleAddOrder}
                                 onAddCustomer={handleAddCustomer}
                                 searchQuery={searchQuery}
-                                isEmpty={dashboardCards.length === 0}
-                                isOrdersEmpty={filteredOrders.length === 0}
-                                isCustomersEmpty={filteredCustomers.length === 0}
+                                isEmpty={isDashboardEmpty}
+                                isOrdersEmpty={isOrdersEmpty}
+                                isCustomersEmpty={isCustomersEmpty}
                             />
-                        </MainLayout>
-                    }
-                />
+                        }
+                    />
 
-                <Route
-                    path="/dashboard"
-                    element={
-                        <MainLayout
-                            activeSection="dashboard"
-                            menuItems={MENU_ITEMS}
-                            onMenuClick={setActiveSection}
-                            onAddMenu={() => { }}
-                            onRemoveMenu={() => { }}
-                            searchValue={searchQuery}
-                            onSearchChange={(e) => setSearchQuery(e.target.value)}
-                            pageTitle="Dashboard"
-                            pageBreadcrumb="Home / Home Detail / Home Very Detail"
-                        >
-                            <Dashboard
-                                activeSection="dashboard"
-                                cards={dashboardCards}
-                                orders={filteredOrders}
-                                customers={filteredCustomers}
-                                onAddOrder={handleAddOrder}
-                                onAddCustomer={handleAddCustomer}
-                                searchQuery={searchQuery}
-                                isEmpty={dashboardCards.length === 0}
-                                isOrdersEmpty={filteredOrders.length === 0}
-                                isCustomersEmpty={filteredCustomers.length === 0}
-                            />
-                        </MainLayout>
-                    }
-                />
-
-                <Route
-                    path="/orders"
-                    element={
-                        <MainLayout
-                            activeSection="orders"
-                            menuItems={MENU_ITEMS}
-                            onMenuClick={setActiveSection}
-                            onAddMenu={() => { }}
-                            onRemoveMenu={() => { }}
-                            searchValue={searchQuery}
-                            onSearchChange={(e) => setSearchQuery(e.target.value)}
-                            pageTitle="Orders"
-                            pageBreadcrumb="Home / Orders / Order List"
-                        >
+                    <Route
+                        path="/orders"
+                        element={
                             <Orders
                                 orders={filteredOrders}
                                 onAddOrder={handleAddOrder}
-                                isEmpty={filteredOrders.length === 0}
+                                isEmpty={isOrdersEmpty}
                             />
-                        </MainLayout>
-                    }
-                />
+                        }
+                    />
 
-                <Route
-                    path="/customers"
-                    element={
-                        <MainLayout
-                            activeSection="customers"
-                            menuItems={MENU_ITEMS}
-                            onMenuClick={setActiveSection}
-                            onAddMenu={() => { }}
-                            onRemoveMenu={() => { }}
-                            searchValue={searchQuery}
-                            onSearchChange={(e) => setSearchQuery(e.target.value)}
-                            pageTitle="Customers"
-                            pageBreadcrumb="Home / Customers / Customer List"
-                        >
+                    <Route
+                        path="/customers"
+                        element={
                             <Customers
                                 customers={filteredCustomers}
                                 onAddCustomer={handleAddCustomer}
-                                isEmpty={filteredCustomers.length === 0}
+                                isEmpty={isCustomersEmpty}
                             />
-                        </MainLayout>
-                    }
-                />
+                        }
+                    />
 
-                <Route
-                    path="/products"
-                    element={
-                        <MainLayout
-                            activeSection="products"
-                            menuItems={MENU_ITEMS}
-                            onMenuClick={setActiveSection}
-                            onAddMenu={() => { }}
-                            onRemoveMenu={() => { }}
-                            searchValue={searchQuery}
-                            onSearchChange={(e) => setSearchQuery(e.target.value)}
-                            pageTitle="Products"
-                            pageBreadcrumb="Home / Products / Product List"
-                        >
-                            <Products />
-                        </MainLayout>
-                    }
-                />
+                    <Route
+                        path="/products/:id"
+                        element={<ProductDetail />}
+                    />
 
-                <Route
-                    path="/products/:id"
-                    element={
-                        <MainLayout
-                            activeSection="products"
-                            menuItems={MENU_ITEMS}
-                            onMenuClick={setActiveSection}
-                            onAddMenu={() => { }}
-                            onRemoveMenu={() => { }}
-                            searchValue={searchQuery}
-                            onSearchChange={(e) => setSearchQuery(e.target.value)}
-                            pageTitle="Product Detail"
-                            pageBreadcrumb="Home / Products / Product Detail"
-                        >
-                            <ProductDetail />
-                        </MainLayout>
-                    }
-                />
+                    <Route
+                        path="/products"
+                        element={<Products isEmpty={false} />}
+                    />
 
-                <Route
-                    path="/components"
-                    element={
-                        <MainLayout
-                            activeSection="components"
-                            menuItems={MENU_ITEMS}
-                            onMenuClick={setActiveSection}
-                            onAddMenu={() => { }}
-                            onRemoveMenu={() => { }}
-                            searchValue={searchQuery}
-                            onSearchChange={(e) => setSearchQuery(e.target.value)}
-                            pageTitle="Components"
-                            pageBreadcrumb="Home / Components / Component List"
-                        >
-                            <Components />
-                        </MainLayout>
-                    }
-                />
+                    <Route
+                        path="/components"
+                        element={<Components />}
+                    />
 
-                <Route
-                    path="/fiturxyz"
-                    element={
-                        <MainLayout
-                            activeSection="fiturxyz"
-                            menuItems={MENU_ITEMS}
-                            onMenuClick={setActiveSection}
-                            onAddMenu={() => { }}
-                            onRemoveMenu={() => { }}
-                            searchValue={searchQuery}
-                            onSearchChange={(e) => setSearchQuery(e.target.value)}
-                            pageTitle="Fitur XYZ"
-                            pageBreadcrumb="Home / Fitur XYZ / XYZ Page"
-                        >
-                            <FiturXyz />
-                        </MainLayout>
-                    }
-                />
+                    <Route
+                        path="/fiturxyz"
+                        element={<FiturXyz />}
+                    />
 
-                {/* 404 Error Page - Standalone (tanpa layout) */}
-                <Route path="*" element={<NotFound />} />
-            </Routes>
+                    <Route path="*" element={<NotFound />} />
+                </Routes>
+            </MainLayout>
         </Suspense>
     );
 }
