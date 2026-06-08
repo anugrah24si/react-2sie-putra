@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FaHeadphonesAlt, FaList, FaPlus, FaThLarge, FaTrashAlt, FaCubes } from "react-icons/fa";
+import { FaHeadphonesAlt, FaList, FaPlus, FaThLarge, FaTrashAlt, FaCubes, FaStickyNote } from "react-icons/fa";
 
 /**
  * MenuIcon Component - Menampilkan ikon yang sesuai untuk setiap menu
@@ -21,6 +21,10 @@ function MenuIcon({ menuId }) {
 
     if (menuId === "components") {
         return <FaCubes />;
+    }
+
+    if (menuId === "notes") {
+        return <FaStickyNote />;
     }
 
     return <FaPlus />;
@@ -49,13 +53,14 @@ function SidebarMenuItem({ id, label, isActive, removable, onClick, onRemove }) 
         if (menuId === "orders") return "/orders";
         if (menuId === "customers") return "/customers";
         if (menuId === "components") return "/components";
+        if (menuId === "notes") return "/notes";
         return "/";
     }
 
     return (
         <li>
             <Link
-                id={id === "dashboard" ? "menu-1" : id === "orders" ? "menu-2" : id === "customers" ? "menu-3" : id === "components" ? "menu-4" : id}
+                id={id === "dashboard" ? "menu-1" : id === "orders" ? "menu-2" : id === "customers" ? "menu-3" : id === "components" ? "menu-4" : id === "notes" ? "menu-5" : id}
                 to={getMenuPath(id)}
                 className="sidebar-menu-row"
                 data-active={isActive ? "true" : "false"}

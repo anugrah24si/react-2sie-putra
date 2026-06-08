@@ -17,6 +17,7 @@ const Forgot = React.lazy(() => import("./pages/Auth/Forgot"));
 const Loading = React.lazy(() => import("./components/Loading"));
 const Components = React.lazy(() => import("./pages/Main/Components"));
 const FiturXyz = React.lazy(() => import("./pages/Main/FiturXyz"));
+const Note = React.lazy(() => import("./pages/Main/Note"));
 
 // Data menu sidebar
 const MENU_ITEMS = [
@@ -24,6 +25,7 @@ const MENU_ITEMS = [
     { id: "orders", label: "Orders" },
     { id: "customers", label: "Customers" },
     { id: "products", label: "Products" },
+    { id: "notes", label: "Notes" },
     { id: "components", label: "Components" },
     { id: "fiturxyz", label: "Fitur XYZ" },
 ];
@@ -157,6 +159,7 @@ export default function App() {
         orders: { title: "Orders", breadcrumb: "Home / Orders / Order List" },
         customers: { title: "Customers", breadcrumb: "Home / Customers / Customer List" },
         products: { title: "Products", breadcrumb: "Home / Products / Product List" },
+        notes: { title: "Notes", breadcrumb: "Home / Notes / Note List" },
         components: { title: "Components", breadcrumb: "Home / Components / Component List" },
         fiturxyz: { title: "Fitur XYZ", breadcrumb: "Home / Fitur XYZ / XYZ Page" },
     };
@@ -166,6 +169,7 @@ export default function App() {
     if (currentPath.includes("/orders")) currentSection = "orders";
     else if (currentPath.includes("/customers")) currentSection = "customers";
     else if (currentPath.includes("/products")) currentSection = "products";
+    else if (currentPath.includes("/notes")) currentSection = "notes";
     else if (currentPath.includes("/components")) currentSection = "components";
     else if (currentPath.includes("/fiturxyz")) currentSection = "fiturxyz";
 
@@ -334,6 +338,25 @@ export default function App() {
                             pageBreadcrumb="Home / Products / Product Detail"
                         >
                             <ProductDetail />
+                        </MainLayout>
+                    }
+                />
+
+                <Route
+                    path="/notes"
+                    element={
+                        <MainLayout
+                            activeSection="notes"
+                            menuItems={MENU_ITEMS}
+                            onMenuClick={setActiveSection}
+                            onAddMenu={() => { }}
+                            onRemoveMenu={() => { }}
+                            searchValue={searchQuery}
+                            onSearchChange={(e) => setSearchQuery(e.target.value)}
+                            pageTitle="Notes"
+                            pageBreadcrumb="Home / Notes / Note List"
+                        >
+                            <Note />
                         </MainLayout>
                     }
                 />
