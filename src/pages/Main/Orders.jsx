@@ -1,167 +1,174 @@
-import { useState } from "react";
-import PageHeader from "../../components/PageHeader";
+import { useState, useEffect } from "react";
+import { ordersAPI } from "../../services/ordersAPI";
 
-/**
- * Orders Component - Halaman untuk menampilkan dan menambah data orders
- * 
- * Fitur:
- * - Menampilkan daftar orders dalam bentuk tabel
- * - Form untuk menambah order baru
- * - Search filtering untuk mencari orders
- * 
- * @param {Array} orders - Daftar orders yang akan ditampilkan
- * @param {function} onAddOrder - Callback untuk menambah order baru
- * @param {boolean} isEmpty - Status apakah daftar orders kosong (saat search)
- */
-export default function Orders({ orders, onAddOrder, isEmpty }) {
-    // State untuk menyimpan nilai input form order
-    const [orderForm, setOrderForm] = useState({
-        customer: "",
-        item: "",
-        total: "",
-        status: "Preparing",
-    });
+export default function Orders() {
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+    const [expandedOrder, setExpandedOrder] = useState(null);
 
-    /**
-     * getOrderStatusClass - Menentukan class CSS berdasarkan status order
-     * Setiap status memiliki styling yang berbeda untuk keperluan visual
-     * @param {string} status - Status dari order (Preparing, On Delivery, Delivered, Canceled)
-     * @returns {string} CSS class untuk styling status badge
-     */
-    function getOrderStatusClass(status) {
-        if (status === "Delivered") return "order-status delivered";
-        if (status === "On Delivery") return "order-status on-delivery";
-        if (status === "Preparing") return "order-status preparing";
-        return "order-status canceled";
+    useEffect(() => { loadOrders(); }, []);
+
+    async function loadOrders() {
+        try {
+            setLoading(true);
+            const data = await ordersAPI.fetchOrders();
+            setOrders(data);
+        } catch (err) {
+            setError("Failed to load orders");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
     }
 
-    /**
-     * handleSubmitOrder - Menangani submit form order baru
-     * Melakukan validasi data sebelum memanggil callback onAddOrder
-     * Mengembalikan form ke state awal setelah submit berhasil
-     * @param {Event} event - Event dari form submission
-     */
-    function handleSubmitOrder(event) {
-        event.preventDefault();
-
-        // Validasi: semua field harus terisi
-        if (!orderForm.customer.trim() || !orderForm.item.trim() || !orderForm.total.trim()) {
-            alert("Silakan isi semua field yang wajib");
-            return;
+    async function handleStatusChange(orderId, newStatus) {
+        if (!window.confirm(`Change status to "${newStatus}"?`)) return;
+        try {
+            setError("");
+            await ordersAPI.updateOrderStatus(orderId, newStatus);
+            setSuccess(`Order status updated to ${newStatus}!`);
+            await loadOrders();
+            setTimeout(() => setSuccess(""), 3000);
+        } catch (err) {
+            setError(err.message || "Failed to update status");
         }
+    }
 
-        // Panggil callback untuk menambah order
-        onAddOrder(orderForm);
+    const formatRupiah = (amount) => {
+        return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
+    };
 
-        // Reset form ke state awal
-        setOrderForm({
-            customer: "",
-            item: "",
-            total: "",
-            status: "Preparing",
-        });
+    function getStatusColor(status) {
+        if (status === "Completed") return "bg-green-100 text-green-700";
+        if (status === "Processing") return "bg-blue-100 text-blue-700";
+        if (status === "Cancelled") return "bg-red-100 text-red-700";
+        return "bg-yellow-100 text-yellow-700";
+    }
+
+    function getNextStatuses(currentStatus) {
+        switch (currentStatus) {
+            case "Pending": return ["Processing", "Cancelled"];
+            case "Processing": return ["Completed", "Cancelled"];
+            default: return [];
+        }
+    }
+
+    if (loading && orders.length === 0) {
+        return (
+            <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+                <p className="text-gray-500">Loading orders...</p>
+            </div>
+        );
     }
 
     return (
-        <div id="dashboard-container">
-            <div className="panel-card">
-                {/* Judul Panel */}
-                <div className="panel-title">Recent Orders</div>
+        <div className="space-y-6">
+            {error && <div className="p-4 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
+            {success && <div className="p-4 bg-green-100 text-green-700 rounded-lg text-sm">{success}</div>}
 
-                {/* Form untuk menambah order baru */}
-                <form className="quick-add-form" onSubmit={handleSubmitOrder} noValidate>
-                    {/* Input nama customer */}
-                    <input
-                        type="text"
-                        placeholder="Customer name"
-                        aria-label="Customer name"
-                        value={orderForm.customer}
-                        onChange={(event) =>
-                            setOrderForm((current) => ({ ...current, customer: event.target.value }))
-                        }
-                        required
-                    />
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="font-semibold text-gray-700 mb-4">All Orders ({orders.length})</h3>
 
-                    {/* Input menu item */}
-                    <input
-                        type="text"
-                        placeholder="Menu item"
-                        aria-label="Menu item"
-                        value={orderForm.item}
-                        onChange={(event) =>
-                            setOrderForm((current) => ({ ...current, item: event.target.value }))
-                        }
-                        required
-                    />
-
-                    {/* Input total harga (dalam angka) */}
-                    <input
-                        type="text"
-                        placeholder="Total (contoh: 78000)"
-                        aria-label="Total"
-                        value={orderForm.total}
-                        onChange={(event) =>
-                            setOrderForm((current) => ({ ...current, total: event.target.value }))
-                        }
-                        required
-                    />
-
-                    {/* Dropdown untuk memilih status order */}
-                    <select
-                        aria-label="Order status"
-                        value={orderForm.status}
-                        onChange={(event) =>
-                            setOrderForm((current) => ({ ...current, status: event.target.value }))
-                        }
-                    >
-                        <option value="Preparing">Preparing</option>
-                        <option value="On Delivery">On Delivery</option>
-                        <option value="Delivered">Delivered</option>
-                        <option value="Canceled">Canceled</option>
-                    </select>
-
-                    {/* Tombol submit form */}
-                    <button type="submit">Add Order</button>
-                </form>
-
-                {/* Menampilkan pesan kosong jika tidak ada data */}
-                {isEmpty ? (
-                    <div id="dashboard-empty-state">
-                        No orders found
-                    </div>
+                {orders.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">No orders found</p>
                 ) : (
-                    /* Tabel untuk menampilkan daftar orders */
-                    <div className="table-wrapper">
-                        <table className="panel-table">
-                            {/* Header tabel */}
-                            <thead>
-                                <tr>
-                                    <th>Order ID</th>
-                                    <th>Customer</th>
-                                    <th>Item</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-
-                            {/* Body tabel - menampilkan setiap order */}
-                            <tbody>
-                                {orders.map((order) => (
-                                    <tr key={order.id}>
-                                        <td>{order.id}</td>
-                                        <td>{order.customer}</td>
-                                        <td>{order.item}</td>
-                                        <td>{order.total}</td>
-                                        <td>
-                                            {/* Badge status dengan styling yang sesuai */}
-                                            <span className={getOrderStatusClass(order.status)}>
+                    <div className="space-y-3">
+                        {orders.map((order) => (
+                            <div key={order.id} className="border rounded-xl overflow-hidden">
+                                {/* Order row */}
+                                <div
+                                    className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                                    onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div>
+                                                <p className="font-medium text-gray-800">
+                                                    {order.profiles?.full_name || "Unknown"}
+                                                </p>
+                                                <p className="text-xs text-gray-400">
+                                                    {new Date(order.created_at).toLocaleDateString("id-ID", {
+                                                        day: "numeric", month: "short", year: "numeric",
+                                                        hour: "2-digit", minute: "2-digit"
+                                                    })}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <p className="font-bold text-green-600">
+                                                {formatRupiah(order.final_amount)}
+                                            </p>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                                                 {order.status}
                                             </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Expanded details */}
+                                {expandedOrder === order.id && (
+                                    <div className="border-t px-4 py-4 bg-gray-50">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {/* Order Items */}
+                                            <div>
+                                                <p className="text-xs text-gray-500 font-medium mb-2">Order Items:</p>
+                                                <div className="space-y-1">
+                                                    {order.order_items?.map((item) => (
+                                                        <div key={item.id} className="flex justify-between text-sm">
+                                                            <span>{item.products?.title || "Product"} x{item.quantity}</span>
+                                                            <span>{formatRupiah(item.subtotal)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="border-t mt-2 pt-2 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span>Subtotal</span>
+                                                        <span>{formatRupiah(order.total_amount)}</span>
+                                                    </div>
+                                                    {order.discount_amount > 0 && (
+                                                        <div className="flex justify-between text-green-600">
+                                                            <span>Discount ({order.discount_percentage}%)</span>
+                                                            <span>-{formatRupiah(order.discount_amount)}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex justify-between font-bold">
+                                                        <span>Final</span>
+                                                        <span>{formatRupiah(order.final_amount)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Status Actions */}
+                                            <div>
+                                                <p className="text-xs text-gray-500 font-medium mb-2">Actions:</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {getNextStatuses(order.status).map((status) => (
+                                                        <button
+                                                            key={status}
+                                                            onClick={(e) => { e.stopPropagation(); handleStatusChange(order.id, status); }}
+                                                            className={`text-xs px-3 py-2 rounded-lg font-medium transition-colors ${
+                                                                status === "Completed" ? "bg-green-500 text-white hover:bg-green-600" :
+                                                                status === "Processing" ? "bg-blue-500 text-white hover:bg-blue-600" :
+                                                                "bg-red-500 text-white hover:bg-red-600"
+                                                            }`}
+                                                        >
+                                                            Mark as {status}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                {order.points_earned > 0 && (
+                                                    <p className="text-xs text-green-500 mt-3">Points earned: +{order.points_earned}</p>
+                                                )}
+                                                <p className="text-xs text-gray-400 mt-2">ID: {order.id}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>

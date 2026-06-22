@@ -1,359 +1,130 @@
-import { createElement, useState } from "react";
-import { FaShoppingCart, FaTruck, FaBan, FaDollarSign } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { FaShoppingCart, FaTruck, FaBan, FaDollarSign, FaUsers, FaBoxOpen } from "react-icons/fa";
+import { dashboardAPI } from "../../services/dashboardAPI";
 
-// Kartu ringkasan dashboard untuk menampilkan statistik utama.
-function StatCard({ id, icon: Icon, value, label }) {
+function StatCard({ icon: Icon, value, label, color }) {
     return (
-        <div
-            id={
-                id === "orders"
-                    ? "dashboard-orders"
-                    : id === "delivered"
-                        ? "dashboard-delivered"
-                        : id === "canceled"
-                            ? "dashboard-canceled"
-                            : "dashboard-revenue"
-            }
-        >
-            <div className="stat-icon">{createElement(Icon)}</div>
-            <div className="stat-info">
-                <span className="stat-count">{value}</span>
-                <span className="stat-label">{label}</span>
+        <div className="bg-white rounded-2xl shadow-lg p-6 flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color}`}>
+                <Icon className="text-white text-xl" />
+            </div>
+            <div>
+                <p className="text-2xl font-bold text-gray-800">{value}</p>
+                <p className="text-sm text-gray-500">{label}</p>
             </div>
         </div>
     );
 }
 
-// Dashboard menampilkan kartu statistik yang bisa difilter dari search.
-export default function Dashboard({
-    activeSection,
-    cards,
-    orders,
-    customers,
-    onAddOrder,
-    onAddCustomer,
-    searchQuery,
-    isEmpty,
-    isOrdersEmpty,
-    isCustomersEmpty,
-}) {
-    // State form untuk menambah order dari halaman Orders.
-    const [orderForm, setOrderForm] = useState({
-        customer: "",
-        item: "",
-        total: "",
-        status: "Preparing",
-    });
+export default function Dashboard() {
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    // State form untuk menambah customer dari halaman Customers.
-    const [customerForm, setCustomerForm] = useState({
-        name: "",
-        email: "",
-        city: "",
-        totalOrder: "",
-        tier: "Bronze",
-    });
+    useEffect(() => {
+        loadDashboard();
+    }, []);
 
-    // Mapping icon untuk kartu ringkasan pada halaman Dashboard.
-    const iconMap = {
-        cart: FaShoppingCart,
-        truck: FaTruck,
-        ban: FaBan,
-        money: FaDollarSign,
+    async function loadDashboard() {
+        try {
+            const result = await dashboardAPI.fetchAdminDashboard();
+            setData(result);
+        } catch (err) {
+            setError("Failed to load dashboard data");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const formatRupiah = (amount) => {
+        return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
     };
 
-    // Menentukan class status agar badge order punya warna yang berbeda.
-    function getOrderStatusClass(status) {
-        if (status === "Delivered") return "order-status delivered";
-        if (status === "On Delivery") return "order-status on-delivery";
-        if (status === "Preparing") return "order-status preparing";
-        return "order-status canceled";
+    function getStatusColor(status) {
+        if (status === "Completed") return "bg-green-100 text-green-700";
+        if (status === "Processing") return "bg-blue-100 text-blue-700";
+        if (status === "Cancelled") return "bg-red-100 text-red-700";
+        return "bg-yellow-100 text-yellow-700";
     }
 
-    // Menentukan class tier agar badge customer lebih informatif.
-    function getTierClass(tier) {
-        if (tier === "Platinum") return "customer-tier platinum";
-        if (tier === "Gold") return "customer-tier gold";
-        if (tier === "Silver") return "customer-tier silver";
-        return "customer-tier bronze";
-    }
-
-    // Menangani submit form order baru.
-    function handleSubmitOrder(event) {
-        event.preventDefault();
-
-        if (!orderForm.customer.trim() || !orderForm.item.trim() || !orderForm.total.trim()) {
-            return;
-        }
-
-        onAddOrder(orderForm);
-        setOrderForm({
-            customer: "",
-            item: "",
-            total: "",
-            status: "Preparing",
-        });
-    }
-
-    // Menangani submit form customer baru.
-    function handleSubmitCustomer(event) {
-        event.preventDefault();
-
-        if (!customerForm.name.trim() || !customerForm.email.trim() || !customerForm.city.trim()) {
-            return;
-        }
-
-        onAddCustomer(customerForm);
-        setCustomerForm({
-            name: "",
-            email: "",
-            city: "",
-            totalOrder: "",
-            tier: "Bronze",
-        });
-    }
-
-    if (activeSection === "orders") {
+    if (loading) {
         return (
-            <div id="dashboard-container">
-                <div className="panel-card">
-                    <div className="panel-title">Recent Orders</div>
-                    <form className="quick-add-form" onSubmit={handleSubmitOrder} noValidate>
-                        <input
-                            type="text"
-                            placeholder="Customer name"
-                            aria-label="Customer name"
-                            value={orderForm.customer}
-                            onChange={(event) =>
-                                setOrderForm((current) => ({ ...current, customer: event.target.value }))
-                            }
-                            required
-                        />
-                        <input
-                            type="text"
-                            placeholder="Menu item"
-                            aria-label="Menu item"
-                            value={orderForm.item}
-                            onChange={(event) =>
-                                setOrderForm((current) => ({ ...current, item: event.target.value }))
-                            }
-                            required
-                        />
-                        <input
-                            type="text"
-                            placeholder="Total (contoh: 78000)"
-                            aria-label="Total"
-                            value={orderForm.total}
-                            onChange={(event) =>
-                                setOrderForm((current) => ({ ...current, total: event.target.value }))
-                            }
-                            required
-                        />
-                        <select
-                            aria-label="Order status"
-                            value={orderForm.status}
-                            onChange={(event) =>
-                                setOrderForm((current) => ({ ...current, status: event.target.value }))
-                            }
-                        >
-                            <option value="Preparing">Preparing</option>
-                            <option value="On Delivery">On Delivery</option>
-                            <option value="Delivered">Delivered</option>
-                            <option value="Canceled">Canceled</option>
-                        </select>
-                        <button type="submit">Add Order</button>
-                    </form>
-                    {isOrdersEmpty ? (
-                        <div id="dashboard-empty-state">
-                            No orders found for <b>{searchQuery}</b>
-                        </div>
-                    ) : (
-                        <div className="table-wrapper">
-                            <table className="panel-table">
-                                <thead>
-                                    <tr>
-                                        <th>Order ID</th>
-                                        <th>Customer</th>
-                                        <th>Item</th>
-                                        <th>Total</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {orders.map((order) => (
-                                        <tr key={order.id}>
-                                            <td>{order.id}</td>
-                                            <td>{order.customer}</td>
-                                            <td>{order.item}</td>
-                                            <td>{order.total}</td>
-                                            <td>
-                                                <span className={getOrderStatusClass(order.status)}>{order.status}</span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
+            <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+                <p className="text-gray-500">Loading dashboard...</p>
             </div>
         );
     }
 
-    if (activeSection === "customers") {
-        return (
-            <div id="dashboard-container">
-                <div className="panel-card">
-                    <div className="panel-title">Customers</div>
-                    <form className="quick-add-form" onSubmit={handleSubmitCustomer} noValidate>
-                        <input
-                            type="text"
-                            placeholder="Customer name"
-                            aria-label="Customer name"
-                            value={customerForm.name}
-                            onChange={(event) =>
-                                setCustomerForm((current) => ({ ...current, name: event.target.value }))
-                            }
-                            required
-                        />
-                        <input
-                            type="email"
-                            placeholder="Email"
-                            aria-label="Email"
-                            value={customerForm.email}
-                            onChange={(event) =>
-                                setCustomerForm((current) => ({ ...current, email: event.target.value }))
-                            }
-                            required
-                        />
-                        <input
-                            type="text"
-                            placeholder="City"
-                            aria-label="City"
-                            value={customerForm.city}
-                            onChange={(event) =>
-                                setCustomerForm((current) => ({ ...current, city: event.target.value }))
-                            }
-                            required
-                        />
-                        <input
-                            type="number"
-                            min="0"
-                            placeholder="Total order"
-                            aria-label="Total orders"
-                            value={customerForm.totalOrder}
-                            onChange={(event) =>
-                                setCustomerForm((current) => ({ ...current, totalOrder: event.target.value }))
-                            }
-                        />
-                        <select
-                            aria-label="Customer tier"
-                            value={customerForm.tier}
-                            onChange={(event) =>
-                                setCustomerForm((current) => ({ ...current, tier: event.target.value }))
-                            }
-                        >
-                            <option value="Bronze">Bronze</option>
-                            <option value="Silver">Silver</option>
-                            <option value="Gold">Gold</option>
-                            <option value="Platinum">Platinum</option>
-                        </select>
-                        <button type="submit">Add Customer</button>
-                    </form>
-                    {isCustomersEmpty ? (
-                        <div id="dashboard-empty-state">
-                            No customers found for <b>{searchQuery}</b>
-                        </div>
-                    ) : (
-                        <div className="customers-grid">
-                            {customers.map((customer) => (
-                                <article key={customer.id} className="customer-card">
-                                    <div className="customer-head">
-                                        <div>
-                                            <p className="customer-name">{customer.name}</p>
-                                            <p className="customer-email">{customer.email}</p>
-                                        </div>
-                                        <span className={getTierClass(customer.tier)}>{customer.tier}</span>
-                                    </div>
-                                    <div className="customer-meta">
-                                        <span>{customer.id}</span>
-                                        <span>{customer.city}</span>
-                                        <span>{customer.totalOrder} Orders</span>
-                                    </div>
-                                </article>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
+    if (error) {
+        return <div className="p-4 bg-red-100 text-red-700 rounded-lg">{error}</div>;
     }
+
+    if (!data) return null;
 
     return (
-        <div id="dashboard-container">
-            <div id="dashboard-grid">
-                {isEmpty ? (
-                    <div id="dashboard-empty-state">
-                        No results found for <b>{searchQuery}</b>
-                    </div>
-                ) : (
-                    cards.map((card) => (
-                        <StatCard
-                            key={card.id}
-                            id={card.id}
-                            icon={iconMap[card.icon]}
-                            value={card.value}
-                            label={card.label}
-                        />
-                    ))
-                )}
+        <div className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard icon={FaUsers} value={data.totalCustomers} label="Total Customers" color="bg-blue-500" />
+                <StatCard icon={FaBoxOpen} value={data.totalProducts} label="Total Products" color="bg-purple-500" />
+                <StatCard icon={FaShoppingCart} value={data.totalOrders} label="Total Orders" color="bg-orange-500" />
+                <StatCard icon={FaDollarSign} value={formatRupiah(data.totalRevenue)} label="Total Revenue" color="bg-green-500" />
             </div>
 
-            <div id="dashboard-secondary-grid">
-                <div className="panel-card">
-                    <div className="panel-title">Recent Orders</div>
-                    <div className="table-wrapper">
-                        <table className="panel-table">
+            {/* Members per Tier */}
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="font-semibold text-gray-800 mb-4">Members per Tier</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {Object.entries(data.membersPerTier).map(([tier, count]) => (
+                        <div key={tier} className="text-center p-4 bg-gray-50 rounded-lg">
+                            <p className="text-2xl font-bold text-gray-800">{count}</p>
+                            <p className="text-sm text-gray-500">{tier}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Recent Orders */}
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+                <h3 className="font-semibold text-gray-800 mb-4">Recent Orders</h3>
+                {data.recentOrders.length === 0 ? (
+                    <p className="text-gray-500 text-sm">No orders yet.</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full text-sm">
                             <thead>
-                                <tr>
-                                    <th>Order ID</th>
-                                    <th>Customer</th>
-                                    <th>Item</th>
-                                    <th>Status</th>
+                                <tr className="border-b">
+                                    <th className="text-left py-2 px-3">Date</th>
+                                    <th className="text-left py-2 px-3">Customer</th>
+                                    <th className="text-left py-2 px-3">Total</th>
+                                    <th className="text-left py-2 px-3">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {orders.slice(0, 5).map((order) => (
-                                    <tr key={order.id}>
-                                        <td>{order.id}</td>
-                                        <td>{order.customer}</td>
-                                        <td>{order.item}</td>
-                                        <td>
-                                            <span className={getOrderStatusClass(order.status)}>{order.status}</span>
+                                {data.recentOrders.map((order) => (
+                                    <tr key={order.id} className="border-b hover:bg-gray-50">
+                                        <td className="py-2 px-3">
+                                            {new Date(order.created_at).toLocaleDateString("id-ID")}
+                                        </td>
+                                        <td className="py-2 px-3">
+                                            {order.profiles?.full_name || "Unknown"}
+                                        </td>
+                                        <td className="py-2 px-3 font-medium">
+                                            {formatRupiah(order.final_amount)}
+                                        </td>
+                                        <td className="py-2 px-3">
+                                            <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(order.status)}`}>
+                                                {order.status}
+                                            </span>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
-                </div>
-
-                <div className="panel-card">
-                    <div className="panel-title">Customer Activity</div>
-                    <div id="dashboard-activity-list">
-                        {customers.slice(0, 4).map((customer) => (
-                            <div key={customer.id} className="dashboard-activity-item">
-                                <div>
-                                    <div className="dashboard-activity-title">{customer.name}</div>
-                                    <div className="dashboard-activity-meta">
-                                        {customer.city} · {customer.tier}
-                                    </div>
-                                </div>
-                                <div className="dashboard-activity-value">{customer.totalOrder} orders</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                )}
             </div>
         </div>
     );

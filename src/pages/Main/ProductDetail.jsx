@@ -1,308 +1,145 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import productsData from "../../data/products.json";
+import { productsAPI } from "../../services/productsAPI";
 
-/**
- * ProductDetail Component - Halaman untuk menampilkan detail produk tertentu
- * 
- * Menggunakan Dynamic Route dengan parameter :id
- * URL: /products/:id
- * Contoh: /products/001 → detail produk dengan id 001
- * 
- * Mengambil data produk dari JSON berdasarkan ID yang diterima dari URL parameter
- * Menampilkan informasi lengkap: gambar, judul, kategori, brand, harga, stok
- * 
- * @returns {JSX.Element} Halaman detail produk atau pesan error jika produk tidak ditemukan
- */
 export default function ProductDetail() {
-    // Mengambil parameter id dari URL menggunakan useParams()
     const { id } = useParams();
-    // Hook untuk navigasi ke halaman lain
     const navigate = useNavigate();
-    // State untuk menyimpan data produk yang ditemukan
     const [product, setProduct] = useState(null);
-    // State untuk menyimpan pesan error jika terjadi masalah
     const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    /**
-     * useEffect - Mencari dan memuat data produk berdasarkan ID
-     * Dijalankan setiap kali parameter id berubah
-     * Mencari produk di array productsData dengan id yang sesuai
-     */
     useEffect(() => {
-        // Cari produk berdasarkan id dari parameter URL
-        const foundProduct = productsData.find((item) => item.id === id);
-
-        if (!foundProduct) {
-            // Jika produk tidak ditemukan, set error message
-            setError(`Produk dengan ID "${id}" tidak ditemukan`);
-            return;
-        }
-
-        // Set produk yang ditemukan ke state
-        setProduct(foundProduct);
+        loadProduct();
     }, [id]);
 
-    /**
-     * formatRupiah - Mengubah angka menjadi format Rupiah Indonesia
-     * Contoh: 45000 → "Rp 45.000"
-     * @param {number} amount - Jumlah dalam bentuk angka
-     * @returns {string} Angka yang sudah diformat dengan Rp
-     */
-    const formatRupiah = (amount) => {
-        return new Intl.NumberFormat("id-ID", {
-            style: "currency",
-            currency: "IDR",
-            minimumFractionDigits: 0,
-        }).format(amount);
-    };
-
-    /**
-     * getStockStatus - Menentukan status stok produk
-     * Mengembalikan status dan warna berdasarkan jumlah stok
-     * @param {number} stock - Jumlah stok produk
-     * @returns {object} Objek dengan status dan warna
-     */
-    const getStockStatus = (stock) => {
-        if (stock > 50) {
-            return { label: "Stock Melimpah", color: "#10b981" };
-        } else if (stock > 20) {
-            return { label: "Stock Tersedia", color: "#3b82f6" };
-        } else if (stock > 0) {
-            return { label: "Stock Terbatas", color: "#f59e0b" };
-        } else {
-            return { label: "Stok Habis", color: "#ef4444" };
+    async function loadProduct() {
+        try {
+            setLoading(true);
+            const data = await productsAPI.fetchProductById(id);
+            setProduct(data);
+        } catch (err) {
+            setError(`Product not found`);
+        } finally {
+            setLoading(false);
         }
+    }
+
+    async function handleDelete() {
+        if (!window.confirm("Delete this product?")) return;
+        try {
+            await productsAPI.deleteProduct(id);
+            navigate("/products");
+        } catch (err) {
+            setError(err.message);
+        }
+    }
+
+    const formatRupiah = (amount) => {
+        return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
     };
 
-    // Jika terjadi error, tampilkan pesan error
+    const getStockStatus = (stock) => {
+        if (stock > 50) return { label: "Stock Melimpah", color: "text-green-600", bg: "border-green-500" };
+        if (stock > 20) return { label: "Stock Tersedia", color: "text-blue-600", bg: "border-blue-500" };
+        if (stock > 0) return { label: "Stock Terbatas", color: "text-yellow-600", bg: "border-yellow-500" };
+        return { label: "Stok Habis", color: "text-red-600", bg: "border-red-500" };
+    };
+
+    if (loading) {
+        return (
+            <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-2"></div>
+                <p className="text-gray-500">Loading product...</p>
+            </div>
+        );
+    }
+
     if (error) {
         return (
-            <div id="dashboard-container">
-                <div className="panel-card">
-                    <div className="panel-title">Product Not Found</div>
-                    <div id="dashboard-empty-state" style={{ textAlign: "center", padding: "40px" }}>
-                        <p style={{ color: "#ef4444", marginBottom: "20px" }}>{error}</p>
-                        <button
-                            onClick={() => navigate("/products")}
-                            style={{
-                                padding: "10px 20px",
-                                cursor: "pointer",
-                                backgroundColor: "#10b981",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "4px",
-                                fontWeight: 600,
-                            }}
-                        >
-                            ← Back to Products
-                        </button>
-                    </div>
-                </div>
+            <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+                <p className="text-red-500 mb-4">{error}</p>
+                <button onClick={() => navigate("/products")} className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                    Back to Products
+                </button>
             </div>
         );
     }
 
-    // Jika data masih dimuat (loading), tampilkan pesan loading
-    if (!product) {
-        return (
-            <div id="dashboard-container">
-                <div className="panel-card">
-                    <div id="dashboard-empty-state" style={{ textAlign: "center", padding: "40px" }}>
-                        Loading product details...
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    if (!product) return null;
 
-    // Mendapatkan status stok dan warnanya
     const stockStatus = getStockStatus(product.stock);
 
-    // Render detail produk
     return (
-        <div id="dashboard-container">
-            <div className="panel-card">
-                {/* Header dengan tombol kembali */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
-                    <div className="panel-title">Product Detail</div>
-                    <button
-                        onClick={() => navigate("/products")}
-                        style={{
-                            padding: "8px 16px",
-                            cursor: "pointer",
-                            backgroundColor: "#6b7280",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            fontWeight: 500,
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = "#4b5563"}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = "#6b7280"}
-                    >
-                        ← Back to Products
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <button onClick={() => navigate("/products")} className="text-sm text-gray-500 hover:text-gray-700">
+                    &larr; Back to Products
+                </button>
+                <div className="flex gap-2">
+                    <button onClick={handleDelete} className="text-sm bg-red-50 text-red-600 px-4 py-2 rounded-lg hover:bg-red-100">
+                        Delete
                     </button>
                 </div>
+            </div>
 
-                {/* Layout: 2 kolom - kiri info utama, kanan spesifikasi */}
-                <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr",
-                    gap: "40px",
-                    padding: "30px",
-                    backgroundColor: "rgba(255, 255, 255, 0.05)",
-                    borderRadius: "8px"
-                }}>
-                    {/* Kolom Kiri: Informasi Produk Utama */}
-                    <div>
-                        {/* Placeholder gambar produk */}
-                        <div style={{
-                            width: "100%",
-                            height: "300px",
-                            backgroundColor: "#2d2d3d",
-                            borderRadius: "8px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginBottom: "30px",
-                            border: "2px dashed #444",
-                            fontSize: "14px",
-                            color: "#999",
-                        }}>
-                            No Image Available
+            {/* Product Detail Card */}
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* Left: Main Info */}
+                    <div className="md:col-span-2 space-y-6">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-800">{product.title}</h1>
+                            <p className="text-sm text-gray-400 mt-1 font-mono">{product.code}</p>
                         </div>
 
-                        {/* Nama dan Judul Produk */}
-                        <h2 style={{ margin: "0 0 15px 0", fontSize: "28px", fontWeight: 700 }}>
-                            {product.title}
-                        </h2>
-
-                        {/* Daftar spesifikasi produk */}
-                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                            {/* ID Produk */}
+                        {product.description && (
                             <div>
-                                <label style={{ fontWeight: 600, color: "#999", fontSize: "12px", textTransform: "uppercase" }}>
-                                    Product ID
-                                </label>
-                                <p style={{ margin: "8px 0 0 0", fontSize: "16px" }}>{product.id}</p>
+                                <label className="text-xs text-gray-500 uppercase font-semibold">Description</label>
+                                <p className="mt-1 text-gray-700">{product.description}</p>
                             </div>
+                        )}
 
-                            {/* Kode Produk */}
+                        <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label style={{ fontWeight: 600, color: "#999", fontSize: "12px", textTransform: "uppercase" }}>
-                                    Product Code
-                                </label>
-                                <p style={{ margin: "8px 0 0 0", fontSize: "16px", fontFamily: "monospace" }}>
-                                    {product.code}
+                                <label className="text-xs text-gray-500 uppercase font-semibold">Category</label>
+                                <p className="mt-1">
+                                    <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm">{product.category}</span>
                                 </p>
                             </div>
-
-                            {/* Kategori Produk */}
                             <div>
-                                <label style={{ fontWeight: 600, color: "#999", fontSize: "12px", textTransform: "uppercase" }}>
-                                    Category
-                                </label>
-                                <p style={{ margin: "8px 0 0 0", fontSize: "16px" }}>
-                                    <span style={{
-                                        backgroundColor: "#3b82f6",
-                                        color: "white",
-                                        padding: "4px 12px",
-                                        borderRadius: "4px",
-                                        display: "inline-block",
-                                    }}>
-                                        {product.category}
-                                    </span>
-                                </p>
+                                <label className="text-xs text-gray-500 uppercase font-semibold">Brand</label>
+                                <p className="mt-1 font-medium">{product.brand || "-"}</p>
                             </div>
-
-                            {/* Brand Produk */}
                             <div>
-                                <label style={{ fontWeight: 600, color: "#999", fontSize: "12px", textTransform: "uppercase" }}>
-                                    Brand
-                                </label>
-                                <p style={{ margin: "8px 0 0 0", fontSize: "16px", fontWeight: 500 }}>
-                                    {product.brand}
-                                </p>
+                                <label className="text-xs text-gray-500 uppercase font-semibold">Price</label>
+                                <p className="mt-1 text-2xl font-bold text-green-600">{formatRupiah(product.price)}</p>
                             </div>
-
-                            {/* Harga Produk */}
                             <div>
-                                <label style={{ fontWeight: 600, color: "#999", fontSize: "12px", textTransform: "uppercase" }}>
-                                    Price
-                                </label>
-                                <p style={{
-                                    margin: "8px 0 0 0",
-                                    fontSize: "24px",
-                                    fontWeight: 700,
-                                    color: "#10b981"
-                                }}>
-                                    {formatRupiah(product.price)}
+                                <label className="text-xs text-gray-500 uppercase font-semibold">Created</label>
+                                <p className="mt-1 text-sm text-gray-600">
+                                    {new Date(product.created_at).toLocaleDateString("id-ID", {
+                                        day: "numeric", month: "long", year: "numeric"
+                                    })}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Kolom Kanan: Ringkasan Informasi Stok dan Spesifikasi */}
-                    <div style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "20px"
-                    }}>
-                        {/* Card Stok */}
-                        <div style={{
-                            backgroundColor: "rgba(255, 255, 255, 0.08)",
-                            padding: "20px",
-                            borderRadius: "8px",
-                            border: `2px solid ${stockStatus.color}`,
-                        }}>
-                            <p style={{ margin: 0, color: "#999", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                Stock Status
-                            </p>
-                            <p style={{ margin: "12px 0 0 0", fontSize: "20px", fontWeight: 600, color: stockStatus.color }}>
+                    {/* Right: Stock Card */}
+                    <div className="space-y-4">
+                        <div className={`p-5 rounded-xl border-2 ${stockStatus.bg}`}>
+                            <p className="text-xs text-gray-500 uppercase">Stock Status</p>
+                            <p className={`text-2xl font-bold mt-2 ${stockStatus.color}`}>
                                 {product.stock} Items
                             </p>
-                            <p style={{ margin: "8px 0 0 0", fontSize: "13px", color: "#bbb" }}>
-                                {stockStatus.label}
-                            </p>
+                            <p className="text-sm text-gray-500 mt-1">{stockStatus.label}</p>
                         </div>
 
-                        {/* Card Ringkasan Harga */}
-                        <div style={{
-                            backgroundColor: "rgba(255, 255, 255, 0.08)",
-                            padding: "20px",
-                            borderRadius: "8px",
-                        }}>
-                            <p style={{ margin: 0, color: "#999", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                Unit Price
-                            </p>
-                            <p style={{ margin: "12px 0 0 0", fontSize: "20px", fontWeight: 700, color: "#10b981" }}>
-                                {formatRupiah(product.price)}
-                            </p>
-                        </div>
-
-                        {/* Card Info Tambahan */}
-                        <div style={{
-                            backgroundColor: "rgba(255, 255, 255, 0.08)",
-                            padding: "20px",
-                            borderRadius: "8px",
-                        }}>
-                            <p style={{ margin: 0, color: "#999", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                                Product Details
-                            </p>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-                                    <span style={{ color: "#999" }}>Brand:</span>
-                                    <span style={{ fontWeight: 500 }}>{product.brand}</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-                                    <span style={{ color: "#999" }}>Category:</span>
-                                    <span style={{ fontWeight: 500 }}>{product.category}</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-                                    <span style={{ color: "#999" }}>Code:</span>
-                                    <span style={{ fontWeight: 500, fontFamily: "monospace" }}>{product.code}</span>
-                                </div>
-                            </div>
+                        <div className="p-5 rounded-xl bg-gray-50">
+                            <p className="text-xs text-gray-500 uppercase">Product ID</p>
+                            <p className="text-xs font-mono mt-2 break-all text-gray-600">{product.id}</p>
                         </div>
                     </div>
                 </div>
