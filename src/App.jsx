@@ -34,6 +34,9 @@ const Components = React.lazy(() => import("./pages/Main/Components"));
 const FiturXyz = React.lazy(() => import("./pages/Main/FiturXyz"));
 const Note = React.lazy(() => import("./pages/Main/Note"));
 
+// Lazy loading - Public Landing Page
+const LandingPage = React.lazy(() => import("./components/landing/LandingPage"));
+
 // Loading fallback
 function LoadingFallback() {
     return (
@@ -137,12 +140,13 @@ export default function App() {
     );
 }
 
-// Root path redirects based on auth state
+// Root path: anonymous visitors see the public Landing Page,
+// authenticated users are redirected to their role-based dashboard.
 function RootRedirect() {
     const { user, profile, loading } = useAuth();
 
     if (loading) return <LoadingFallback />;
-    if (!user) return <Navigate to="/login" replace />;
+    if (!user) return <LandingPage />;
     if (profile?.role === "admin") return <Navigate to="/dashboard" replace />;
     return <Navigate to="/member" replace />;
 }
